@@ -1,0 +1,13 @@
+# unity cache files.
+Library/
+Logs/
+Packages/packages-lock.json
+Temp/
+
+# visual studio cache files.
+.vs/
+obj/
+
+.vsconfig
+*.csproj
+*.sln
