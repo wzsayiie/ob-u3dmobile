@@ -2,7 +2,7 @@ using System;
 using System.Text;
 using UnityEngine;
 
-namespace U3DMobile.Management
+namespace U3DMobile
 {
     public static class Log
     {

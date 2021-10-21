@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace U3DMobile.Management
+namespace U3DMobile
 {
     public class Scheduler : SingletonBehaviour<Scheduler>
     {

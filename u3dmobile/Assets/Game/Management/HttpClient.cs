@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine.Networking;
 
-namespace U3DMobile.Management
+namespace U3DMobile
 {
     public class HttpGetResponse
     {

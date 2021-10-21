@@ -3,7 +3,7 @@ using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Sockets;
 
-namespace U3DMobile.Management
+namespace U3DMobile
 {
     public class TcpConnectionResult
     {

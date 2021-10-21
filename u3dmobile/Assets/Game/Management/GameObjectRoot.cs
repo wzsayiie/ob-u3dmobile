@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace U3DMobile.Management
+namespace U3DMobile
 {
     public abstract class Singleton<T> where T : class, new()
     {
