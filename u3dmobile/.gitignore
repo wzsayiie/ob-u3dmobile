@@ -1,22 +1,33 @@
-# unity cache files.
+# unity cache files:
 Library/
 Logs/
 Packages/packages-lock.json
 Temp/
+UserSettings/
 
-# visual studio cache files.
+# visual studio cache files:
 .vs/
 obj/
 .vsconfig
 *.csproj
 *.sln
 
-# third dependences.
+# third dependences:
 Assets/FairyGUI/
 Assets/FairyGUI.meta
 
+Assets/Gen/
+Assets/Gen.meta
 Assets/Puerts/
 Assets/Puerts.meta
 
-# u3dmobile temporary files.
+# u3dmobile generated files:
+Assets/Bundle/fairygui/*
+Assets/Bundle/manuscript/*
+
+Assets/Resources/fairygui/*
+
 DEPENDENCE/
+
+# keep:
+!.gitkeep
