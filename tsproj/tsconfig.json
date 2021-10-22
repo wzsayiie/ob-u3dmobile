@@ -1,0 +1,11 @@
+{
+    "compilerOptions": {
+        "target": "ESNext",
+        "typeRoots": [
+            "../u3dmobile/Assets/Puerts/Typing",
+            "../u3dmobile/Assets/Gen/Typing"
+        ]
+    },
+    "include": [ "manuscript"   ],
+    "exclude": [ "node_modules" ]
+}
