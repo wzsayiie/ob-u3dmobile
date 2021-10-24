@@ -19,7 +19,7 @@ namespace U3DMobile
 
         private FUIPanelHandle _handle = new FUIPanelHandle();
 
-        public void OpenWithCompletion(Action completion)
+        public void Open(Action completion)
         {
             _handle.assetFrom   = assetFrom;
             _handle.showStyle   = showStyle;
@@ -34,7 +34,7 @@ namespace U3DMobile
             FUIManager.instance.Open(_handle, completion);
         }
 
-        public void CloseWithCompletion(Action completion)
+        public void Close(Action completion)
         {
             FUIManager.instance.Close(_handle, completion);
         }
@@ -48,8 +48,8 @@ namespace U3DMobile
         {
             var controls = new Dictionary<string, GObject>();
             
-            var controlCount = _handle.window.contentPane.numChildren;
-            for (int index = 0; index < controlCount; ++index)
+            var count = _handle.window.contentPane.numChildren;
+            for (int index = 0; index < count; ++index)
             {
                 GObject control = _handle.window.contentPane.GetChildAt(index);
                 controls.Add(control.name, control);
