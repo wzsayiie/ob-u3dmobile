@@ -1,3 +1,4 @@
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -7,9 +8,13 @@ namespace U3DMobile
     {
         public static AssetManager instance { get { return GetInstance(); } }
 
-        public byte[]     LoadBytes (string path) { return LoadAsset(path, LoadStaticBytes , LoadBundleBytes ); }
-        public string     LoadString(string path) { return LoadAsset(path, LoadStaticString, LoadBundleString); }
-        public GameObject LoadPrefab(string path) { return LoadAsset(path, LoadStaticPrefab, LoadBundlePrefab); }
+        //IMPORTANT:
+        //when loading assets, AssetManager need the full path starts with "Assets/", include extension name.
+
+        public byte[]     LoadBytes  (string path) { return LoadAsset(path, LoadStaticBytes  , LoadBundleBytes  ); }
+        public string     LoadString (string path) { return LoadAsset(path, LoadStaticString , LoadBundleString ); }
+        public GameObject LoadPrefab (string path) { return LoadAsset(path, LoadStaticPrefab , LoadBundlePrefab ); }
+        public Texture    LoadTexture(string path) { return LoadAsset(path, LoadStaticTexture, LoadBundleTexture); }
 
         private byte[] LoadStaticBytes(string path)
         {
@@ -21,6 +26,11 @@ namespace U3DMobile
         {
             TextAsset asset = Resources.Load<TextAsset>(path);
             return asset?.ToString();
+        }
+
+        private Texture LoadStaticTexture(string path)
+        {
+            return Resources.Load<Texture>(path);
         }
 
         private GameObject LoadStaticPrefab(string path)
@@ -45,35 +55,40 @@ namespace U3DMobile
             return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
+        private Texture LoadBundleTexture(string path)
+        {
+            return AssetDatabase.LoadAssetAtPath<Texture>(path);
+        }
+
         private string ConvertPath(string path, out bool isStatic)
         {
             const string keyword = "Resources/";
             int index = path.LastIndexOf(keyword);
 
-            //not in a "resources/" directory.
-            if (index == -1)
+            //the path is "Assets/../Resources/..".
+            if (index >= 0)
+            {
+                isStatic = true;
+
+                string relativePath = path.Substring(index + keyword.Length);
+
+                //NOTE: the assets path under "resources/" need to ignore the extension name.
+                string relativeName = Path.ChangeExtension(relativePath, null);
+                return relativeName;
+            }
+            //the path is "Assets/../.."
+            else
             {
                 isStatic = false;
                 return path;
             }
-
-            //the asset name is missing.
-            if (index + keyword.Length == path.Length)
-            {
-                isStatic = false;
-                return null;
-            }
-
-            //get the relative path to "resources/" directory.
-            isStatic = true;
-            return path.Substring(index);
         }
 
         private delegate T Loader<T>(string path);
 
         private T LoadAsset<T>(string path, Loader<T> staticLoader, Loader<T> bundleLoader) where T: class
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 Log.Error("try load asset by empty path");
                 return null;
