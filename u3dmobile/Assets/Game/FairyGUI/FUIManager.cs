@@ -49,11 +49,6 @@ namespace U3DMobile
 
         private bool _isSwitching;
 
-        public FUIManager()
-        {
-            //GRoot.inst.position = new Vector3(1000, 0, 0);
-        }
-
         public void AddPackage(string name, FUIAssetFrom from)
         {
             if (string.IsNullOrWhiteSpace(name))
