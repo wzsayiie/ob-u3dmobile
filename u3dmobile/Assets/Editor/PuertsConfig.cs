@@ -19,6 +19,7 @@ namespace U3DMobile.Editor
 
         private static readonly HashSet<string> namespaceCollection = new HashSet<string>()
         {
+            "FairyGUI",
             "U3DMobile",
         };
 
