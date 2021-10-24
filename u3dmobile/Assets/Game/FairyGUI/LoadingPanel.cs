@@ -15,6 +15,11 @@ namespace U3DMobile
             packageName = "loading";
             panelName   = "LoadingPanel";
         }
+
+        protected override void OnCreate()
+        {
+            base.OnCreate();
+        }
     }
 }
 
