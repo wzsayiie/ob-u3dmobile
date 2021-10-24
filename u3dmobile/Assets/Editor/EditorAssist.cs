@@ -120,12 +120,12 @@ namespace U3DMobile.Editor
             Directory.CreateDirectory(path);
         }
 
-        public void GetRemote(string remoteUrl, string localPath, Action complete)
+        public void GetRemote(string remoteUrl, string localPath, Action completion)
         {
-            instance.StartCoroutine(GetRemoteRoutine(remoteUrl, localPath, complete));
+            instance.StartCoroutine(GetRemoteRoutine(remoteUrl, localPath, completion));
         }
 
-        private IEnumerator GetRemoteRoutine(string remoteUrl, string localPath, Action complete)
+        private IEnumerator GetRemoteRoutine(string remoteUrl, string localPath, Action completion)
         {
             DeletePath(localPath);
 
@@ -142,7 +142,7 @@ namespace U3DMobile.Editor
             {
                 Debug.LogError($"get url error: {session.result}");
             }
-            complete?.Invoke();
+            completion?.Invoke();
         }
 
         public void ExtractFile(string archivePath, string targetDirectory)
