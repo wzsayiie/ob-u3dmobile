@@ -36,7 +36,7 @@ namespace U3DMobile
 
             string file = ProjectConfig.BundleManuscriptFile;
             string code = AssetManager.instance.LoadString(file);
-            if (!string.IsNullOrEmpty(code))
+            if (!string.IsNullOrWhiteSpace(code))
             {
                 jsEnv.Eval(code, file);
             }
