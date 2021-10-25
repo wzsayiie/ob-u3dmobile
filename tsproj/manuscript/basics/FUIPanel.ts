@@ -1,5 +1,5 @@
-import { FairyGUI  } from "csharp"
-import { U3DMobile } from "csharp"
+import { FairyGUI  } from 'csharp'
+import { U3DMobile } from 'csharp'
 
 export class FUIPanel
 {

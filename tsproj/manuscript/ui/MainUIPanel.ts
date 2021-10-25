@@ -1,5 +1,5 @@
-import { FairyGUI  } from "csharp"
-import { FUIPanel  } from "../basics/FUIPanel"
+import { FairyGUI  } from 'csharp'
+import { FUIPanel  } from '../basics/FUIPanel'
 
 export class MainUIPanel extends FUIPanel
 {
@@ -7,8 +7,8 @@ export class MainUIPanel extends FUIPanel
     {
         super()
 
-        this.packageName = "mainui"
-        this.panelName   = "MainUIPanel"
+        this.packageName = 'mainui'
+        this.panelName   = 'MainUIPanel'
     }
 
     protected OnCreate(): void
