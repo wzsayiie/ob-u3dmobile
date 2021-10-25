@@ -6,13 +6,15 @@ namespace U3DMobile
 {
     public static class Log
     {
-        public static void WriteInfo(string message)
+        public static void I(string format, params object[] parameters)
         {
+            string message = Format(format, parameters);
             Debug.Log(message);
         }
 
-        public static void WriteError(string message)
+        public static void Error(string format, params object[] parameters)
         {
+            string message = Format(format, parameters);
             Debug.LogError(message);
         }
 
@@ -38,18 +40,6 @@ namespace U3DMobile
 
                 return builder.ToString();
             }
-        }
-
-        public static void I(string format, params object[] parameters)
-        {
-            string message = Format(format, parameters);
-            WriteInfo(message);
-        }
-
-        public static void Error(string format, params object[] parameters)
-        {
-            string message = Format(format, parameters);
-            WriteError(message);
         }
     }
 }
