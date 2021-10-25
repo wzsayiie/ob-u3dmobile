@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="jr3y6xdg">
+  <resources>
+    <component id="gfoh0" name="LoadingPanel.xml" path="/panels/" exported="true"/>
+    <component id="lqbl3" name="LoadingButton.xml" path="/items/"/>
+  </resources>
+  <publish name="" path="../u3dmobile/Assets/Resources/fairygui" packageCount="2"/>
+</packageDescription>

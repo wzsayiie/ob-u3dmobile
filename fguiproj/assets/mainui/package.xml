@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<packageDescription id="j5mpksmp">
+  <resources>
+    <component id="gfoh0" name="MainUIPanel.xml" path="/panels/" exported="true"/>
+  </resources>
+  <publish name=""/>
+</packageDescription>
