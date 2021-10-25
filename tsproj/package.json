@@ -1,5 +1,5 @@
 {
-    "name": "tsproj",
+    "name": "u3dmobile",
     "scripts": {
         "develop": "webpack --config wp-develop.js --watch",
         "release": "webpack --config wp-release.js"
