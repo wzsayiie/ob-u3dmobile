@@ -1,0 +1,6 @@
+{
+    "name": "u3dmobile-pb-transfer",
+    "dependencies": {
+        "protobufjs": "^6.0.0"
+    }
+}

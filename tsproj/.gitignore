@@ -1,2 +1,9 @@
+# node.js cache files.
 node_modules/
 package-lock.json
+
+# generated data files.
+manuscript/data/*
+
+# keep.
+!.gitkeep

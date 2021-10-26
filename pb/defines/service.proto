@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package service;
+
+message LoginRequest {
+    string name = 1;
+}
+
+message LoginResponse {
+    int32 token = 1;
+}
