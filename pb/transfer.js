@@ -1,6 +1,6 @@
-const indir = './defines'
-const outjs = '../tsproj/manuscript/data/pb.js'
-const outts = '../tsproj/manuscript/data/pb.d.ts'
+const InputDefinesDir = './defines'
+const OutputJavasFile = '../tsproj/manuscript/data/pb.js'
+const OutputTypesFile = '../tsproj/manuscript/data/pb.d.ts'
 
 const $fs   = require('fs')
 const $path = require('path')
@@ -8,31 +8,41 @@ const $pbjs = require('protobufjs/cli/pbjs')
 const $pbts = require('protobufjs/cli/pbts')
 const $proc = require('process')
 
+/** @returns {void} */
 function main() {
-    $proc.chdir(__dirname)
+    gotoCurrentDir()
 
-    let files = allfiles(indir)
+    let files = collectFiles(InputDefinesDir)
     if (files.length == 0) {
         console.log('not found any proto files')
         return
     }
 
-    genjs(files, (err) => {
-        if (err) {
-            console.log(err)
+    transferJavas(files, (error) => {
+        if (error) {
+            console.log(error)
             return
         }
 
-        gents((err) => {
-            if (err) {
-                console.log(err)
+        transferTypes((error) => {
+            if (error) {
+                console.log(error)
             }
         })
     })
 }
 
-function allfiles(dir, out) {
-    let files = out ? out : []
+/** @returns {void} */
+function gotoCurrentDir() {
+    $proc.chdir(__dirname)
+}
+
+/**
+ * @param   {string  } dir
+ * @returns {string[]}
+ */
+function collectFiles(dir) {
+    let files = []
 
     let subitems = $fs.readdirSync(dir)
     for (let item of subitems) {
@@ -40,7 +50,9 @@ function allfiles(dir, out) {
         let stat = $fs.statSync(path)
 
         if (stat.isDirectory()) {
-            allfiles(path, files)
+            let rest = collectFiles(path)
+            files = [ ...files, ...rest ]
+
         } else if (path.endsWith('.proto')) {
             files.push(path)
         }
@@ -49,8 +61,13 @@ function allfiles(dir, out) {
     return files
 }
 
-function genjs(files, callback) {
-    let args = [
+/**
+ * @param   {string[]}               files
+ * @param   {(error:Object) => void} callback
+ * @returns {void}
+ */
+function transferJavas(files, callback) {
+    let arguments = [
         '--no-beautify' ,
         '--no-convert'  ,
         '--no-create'   ,
@@ -61,25 +78,29 @@ function genjs(files, callback) {
 
         '--target', 'static-module',
         '--wrap'  , 'es6',
-        '--path'  , indir,
-        '--out'   , outjs,
+        '--path'  , InputDefinesDir,
+        '--out'   , OutputJavasFile,
 
         ...files
     ]
 
-    $pbjs.main(args, (err) => {
-        callback(err)
+    $pbjs.main(arguments, (error) => {
+        callback(error)
     });
 }
 
-function gents(callback) {
-    let args = [
-        '--out', outts,
-        outjs
+/**
+ * @param   {(error:Object) => void} callback
+ * @returns {void}
+ */
+function transferTypes(callback) {
+    let arguments = [
+        '--out', OutputTypesFile,
+        OutputJavasFile
     ]
 
-    $pbts.main(args, (err) => {
-        callback(err)
+    $pbts.main(arguments, (error) => {
+        callback(error)
     })
 }
 
