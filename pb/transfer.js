@@ -8,9 +8,8 @@ const $pbjs = require('protobufjs/cli/pbjs')
 const $pbts = require('protobufjs/cli/pbts')
 const $proc = require('process')
 
-/** @returns {void} */
 function main() {
-    gotoCurrentDir()
+    enterCurrentDir()
 
     let files = collectFiles(InputDefinesDir)
     if (files.length == 0) {
@@ -32,8 +31,7 @@ function main() {
     })
 }
 
-/** @returns {void} */
-function gotoCurrentDir() {
+function enterCurrentDir() {
     $proc.chdir(__dirname)
 }
 
@@ -62,9 +60,8 @@ function collectFiles(dir) {
 }
 
 /**
- * @param   {string[]}               files
- * @param   {(error:Object) => void} callback
- * @returns {void}
+ * @param {string[]}               files
+ * @param {(error:Object) => void} callback
  */
 function transferJavas(files, callback) {
     let arguments = [
@@ -89,10 +86,7 @@ function transferJavas(files, callback) {
     });
 }
 
-/**
- * @param   {(error:Object) => void} callback
- * @returns {void}
- */
+/** @param {(error:Object) => void} callback */
 function transferTypes(callback) {
     let arguments = [
         '--out', OutputTypesFile,
