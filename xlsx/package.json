@@ -1,0 +1,6 @@
+{
+    "name": "u3dmobile-xlsx-transfer",
+    "dependencies": {
+        "read-excel-file": "^5.0.0"
+    }
+}
