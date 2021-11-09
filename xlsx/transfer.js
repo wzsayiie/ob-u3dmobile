@@ -1,4 +1,4 @@
-const InputXlsxDir = './defines'
+const InputXlsxDir = './definitions'
 const OutputTsFile = '../tsproj/manuscript/data/xlsx.ts'
 
 const FSystem  = require('fs')

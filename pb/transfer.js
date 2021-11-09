@@ -1,4 +1,4 @@
-const InputDefinesDir = './defines'
+const InputPBFilesDir = './definitions'
 const OutputJavasFile = '../tsproj/manuscript/data/pb.js'
 const OutputTypesFile = '../tsproj/manuscript/data/pb.d.ts'
 
@@ -11,7 +11,7 @@ const $proc = require('process')
 function main() {
     enterCurrentDir()
 
-    let files = collectFiles(InputDefinesDir)
+    let files = collectFiles(InputPBFilesDir)
     if (files.length == 0) {
         console.log('not found any proto files')
         return
@@ -75,7 +75,7 @@ function transferJavas(files, callback) {
 
         '--target', 'static-module',
         '--wrap'  , 'es6',
-        '--path'  , InputDefinesDir,
+        '--path'  , InputPBFilesDir,
         '--out'   , OutputJavasFile,
 
         ...files
