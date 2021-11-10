@@ -10,7 +10,15 @@ namespace U3DMobile
         public bool success;
         public SocketError errorCode;
     }
-    public delegate void TcpConnectionCallback(TcpConnectionResult result);
+
+    public enum TcpByteOrder
+    {
+        //little endian is default.
+        //if use serializing tools such as "protocol buffers", little endian is more common.
+        LittleEndian,
+
+        BigEndian,
+    }
 
     public class TcpReceivingPackage
     {
@@ -31,35 +39,35 @@ namespace U3DMobile
         //in other words, "bytes.Length" has at least 4 bytes.
         public byte[] data;
     }
-    public delegate void TcpReceivingListener(TcpReceivingPackage package);
 
+    public delegate void TcpConnectionCallback   (TcpConnectionResult result );
+    public delegate void TcpReceivingListener    (TcpReceivingPackage package);
     public delegate void TcpDisconnectionListener();
+    
+    //IMPORTANT: the completion event callback of "SocketAsyncEventArgs" is not run on main thread.
+    class TcpMainThreadQueue : SingletonBehaviour<TcpMainThreadQueue>
+    {
+        public static TcpMainThreadQueue instance { get { return GetInstance(); } }
+
+        private ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
+
+        public void Post(Action action)
+        {
+            _queue.Enqueue(action);
+        }
+
+        protected void Update()
+        {
+            while (_queue.TryDequeue(out Action action))
+            {
+                action();
+            }
+        }
+    }
 
     public class TcpClient : Singleton<TcpClient>
     {
         public static TcpClient instance { get { return GetInstance(); } }
-
-        //IMPORTANT: the completion event callback of "SocketAsyncEventArgs" is not run on main thread.
-        private class TcpMainThreadQueue : SingletonBehaviour<TcpMainThreadQueue>
-        {
-            public static TcpMainThreadQueue instance { get { return GetInstance(); } }
-
-            private ConcurrentQueue<Action> _queue = new ConcurrentQueue<Action>();
-
-            public void Post(Action action)
-            {
-                _queue.Enqueue(action);
-            }
-
-            protected void Update()
-            {
-                Action action;
-                while (_queue.TryDequeue(out action))
-                {
-                    action();
-                }
-            }
-        }
 
         private Socket _socket;
         private SocketAsyncEventArgs _receivingEventArgs;
@@ -71,9 +79,10 @@ namespace U3DMobile
         private const int ReceivingMaxPackageLength = 4098;
         private const int ReceivingBufferLength     = 1024;
 
-        private byte[] _receivingPackage = new byte[ReceivingMaxPackageLength];
-        private int    _receivingExpectedLength = 0;
-        private int    _receivingCurrentLength  = 0;
+        private TcpByteOrder _receivingByteOrder      = TcpByteOrder.LittleEndian;
+        private byte[]       _receivingPackage        = new byte[ReceivingMaxPackageLength];
+        private int          _receivingExpectedLength = 0;
+        private int          _receivingCurrentLength  = 0;
 
         public TcpClient()
         {
@@ -91,6 +100,12 @@ namespace U3DMobile
         {
             set { _disconnectionListener = value; }
             get { return _disconnectionListener ; }
+        }
+
+        public TcpByteOrder receivingByteOrder
+        {
+            set { _receivingByteOrder = value; }
+            get { return _receivingByteOrder ; }
         }
 
         public bool isConnecting
@@ -296,12 +311,20 @@ namespace U3DMobile
 
         private int ParsePackageLength(byte[] bytes)
         {
-            //NOTE: this is using little endian.
-            //if use serializing tools such as "protocol buffers", little endian is more common.
             int value = 0;
-            for (int index = TcpReceivingPackage.LengthSize; index >= 0; --index)
+            if (_receivingByteOrder == TcpByteOrder.LittleEndian)
             {
-                value = (value << 8) + bytes[index];
+                for (int index = TcpReceivingPackage.LengthSize - 1; index >= 0; --index)
+                {
+                    value = (value << 8) + bytes[index];
+                }
+            }
+            else /* BigEndian */
+            {
+                for (int index = 0; index < TcpReceivingPackage.LengthSize; ++index)
+                {
+                    value = (value << 8) + bytes[index];
+                }
             }
 
             if (value < TcpReceivingPackage.LengthSize)
