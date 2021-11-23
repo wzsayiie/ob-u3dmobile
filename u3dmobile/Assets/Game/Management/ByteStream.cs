@@ -34,12 +34,12 @@ namespace U3DMobile
             return _bytes;
         }
 
-        public void Write_LE_Short(short slice) { GetNumber(BitConverter.GetBytes(slice), true ); }
-        public void Write_LE_Int  (int   slice) { GetNumber(BitConverter.GetBytes(slice), true ); }
-        public void Write_BE_Short(short slice) { GetNumber(BitConverter.GetBytes(slice), false); }
-        public void Write_BE_Int  (int   slice) { GetNumber(BitConverter.GetBytes(slice), false); }
+        public void WriteLeInt16(short slice) { WriteNumber(BitConverter.GetBytes(slice), true ); }
+        public void WriteLeInt32(int   slice) { WriteNumber(BitConverter.GetBytes(slice), true ); }
+        public void WriteBeInt16(short slice) { WriteNumber(BitConverter.GetBytes(slice), false); }
+        public void WriteBeInt32(int   slice) { WriteNumber(BitConverter.GetBytes(slice), false); }
 
-        private void GetNumber(byte[] slice, bool littleEndian)
+        private void WriteNumber(byte[] slice, bool littleEndian)
         {
             if (( BitConverter.IsLittleEndian && !littleEndian)
              || (!BitConverter.IsLittleEndian &&  littleEndian))
@@ -49,16 +49,7 @@ namespace U3DMobile
             _slices.Add(slice);
         }
 
-        public void Write_U8String(string slice)
-        {
-            if (!string.IsNullOrEmpty(slice))
-            {
-                byte[] bytes = Encoding.UTF8.GetBytes(slice);
-                _slices.Add(bytes);
-            }
-        }
-
-        public void Write_Bytes(byte[] slice)
+        public void WriteByteArr(byte[] slice)
         {
             if (slice != null && slice.Length > 0)
             {
@@ -78,14 +69,14 @@ namespace U3DMobile
             _index = 0;
         }
 
-        public short Read_LE_Short() { return BitConverter.ToInt16(GetNumber(2, true ), 0); }
-        public int   Read_LE_Int  () { return BitConverter.ToInt32(GetNumber(4, true ), 0); }
-        public short Read_BE_Short() { return BitConverter.ToInt16(GetNumber(2, false), 0); }
-        public int   Read_BE_Int  () { return BitConverter.ToInt32(GetNumber(4, false), 0); }
+        public short ReadLeInt16() { return BitConverter.ToInt16(ReadNumber(2, true ), 0); }
+        public int   ReadLeInt32() { return BitConverter.ToInt32(ReadNumber(4, true ), 0); }
+        public short ReadBeInt16() { return BitConverter.ToInt16(ReadNumber(2, false), 0); }
+        public int   ReadBeInt32() { return BitConverter.ToInt32(ReadNumber(4, false), 0); }
 
-        private byte[] GetNumber(int length, bool littleEndian)
+        private byte[] ReadNumber(int length, bool littleEndian)
         {
-            byte[] slice = Read_Bytes(length);
+            byte[] slice = ReadByteArr(length);
             if (slice == null)
             {
                 return new byte[length];
@@ -99,9 +90,9 @@ namespace U3DMobile
             return slice;
         }
 
-        public string Read_U8String(int length)
+        public string ReadUTF8Str(int length)
         {
-            byte[] slice = Read_Bytes(length);
+            byte[] slice = ReadByteArr(length);
             if (slice != null)
             {
                 return Encoding.UTF8.GetString(slice);
@@ -112,7 +103,7 @@ namespace U3DMobile
             }
         }
 
-        public byte[] Read_Bytes(int length)
+        public byte[] ReadByteArr(int length)
         {
             if (length <= 0)
             {
