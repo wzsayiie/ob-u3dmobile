@@ -24,7 +24,8 @@ namespace U3DMobile
         {
             if (s_root == null)
             {
-                s_root = new GameObject("Root");
+                s_root = new GameObject("GameObjectRoot");
+                Object.DontDestroyOnLoad(s_root);
             }
             return s_root;
         }
