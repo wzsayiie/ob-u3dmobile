@@ -6,16 +6,8 @@ using FairyGUI;
 
 namespace U3DMobile
 {
-    public class LoadingPanel : FUIPanel
+    public class LoadingDirector : UIComDirector
     {
-        public LoadingPanel()
-        {
-            assetFrom   = FUIAssetFrom.Static;
-            showStyle   = FUIShowStyle.Float;
-            packageName = "loading";
-            panelName   = "LoadingPanel";
-        }
-
         protected override void OnCreate()
         {
             base.OnCreate();
