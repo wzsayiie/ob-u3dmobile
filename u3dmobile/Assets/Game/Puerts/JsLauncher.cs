@@ -10,38 +10,34 @@ namespace U3DMobile
     {
         public static JsLauncher instance { get { return GetInstance(); } }
 
-        private bool  _isStared;
-        private JsEnv _jsEnv;
+        private JsEnv _environment;
 
-        public JsEnv GetJsEnv()
+        public JsEnv GetEnvironment()
         {
-            if (_jsEnv == null)
+            if (_environment == null)
             {
-                _jsEnv = new JsEnv();
+                _environment = new JsEnv();
             }
-            return _jsEnv;
+            return _environment;
         }
 
-        public JsEnv jsEnv
+        public JsEnv environment
         {
-            get { return GetJsEnv(); }
+            get { return GetEnvironment(); }
         }
 
         public void Start()
         {
-            if (_isStared)
+            string file = ProjectConfig.BundleManuscriptFile;
+            string code = AssetManager.instance.LoadString(file);
+
+            if (string.IsNullOrWhiteSpace(code))
             {
+                Log.Error("failed to load the javascript bundle.");
                 return;
             }
 
-            string file = ProjectConfig.BundleManuscriptFile;
-            string code = AssetManager.instance.LoadString(file);
-            if (!string.IsNullOrWhiteSpace(code))
-            {
-                jsEnv.Eval(code, file);
-            }
-
-            _isStared = true;
+            environment.Eval(code, file);
         }
     }
 }
