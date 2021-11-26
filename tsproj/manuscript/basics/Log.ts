@@ -2,120 +2,139 @@ import { U3DMobile } from 'csharp'
 
 export class Log
 {
-    static I(format: any, ...params: any[]): void
+    public static I(...objects: any[]): void
     {
-        let formatString = this.Stringify(format)
-        let paramStrings = this.StringifyArray(params)
-
-        U3DMobile.Log.I(formatString, ...paramStrings)
+        this.Merge(objects, (text: string) =>
+        {
+            U3DMobile.Log.WriteInfo(text)
+        })
     }
 
-    static Error(format: any, ...params: any[]): void
+    public static Error(...objects: any[]): void
     {
-        let formatString = this.Stringify(format)
-        let paramStrings = this.StringifyArray(params)
-
-        U3DMobile.Log.Error(formatString, ...paramStrings)
+        this.Merge(objects, (text: string) =>
+        {
+            U3DMobile.Log.WriteError(text)
+        })
     }
 
-    private static Stringify(src: any): string
+    private static Merge(objects: any[], callback: (text: string) => void)
+    {
+        if (objects.length == 0)
+        {
+            return
+        }
+
+        let array = new Array<string>()
+        for (let thing of objects)
+        {
+            let text = this.Stringify(thing)
+            array.push(text)
+        }
+        callback(array.join(', '))
+    }
+
+    private static Stringify(thing: any): string
     {
         let array = new Array<string>()
-        this.Append(src, array)
-
+        this.Build(0, thing, array)
         return array.join('')
     }
 
-    private static StringifyArray(srcArray: any[]): string[]
+    private static Build(level: number, thing: any, outArray: string[]): void
     {
-        let dstArray = new Array<string>()
-        for (let src of srcArray)
+        if (thing === undefined)
         {
-            let dst = this.Stringify(src)
-            dstArray.push(dst)
+            outArray.push('undefined')
         }
-        return dstArray
-    }
-
-    private static Append(anything: any, out: string[]): void
-    {
-        if (anything === null)
+        else if (thing === null)
         {
-            out.push('null')
+            outArray.push('null')
         }
-        else if (this.Is('Array', anything) || this.Is('Set', anything))
+        else if (this.Is('Array', thing) || this.Is('Set', thing))
         {
-            let first = true
+            outArray.push('[')
 
-            out.push('[')
-            for (let item of anything)
+            let following = false
+            for (let item of thing)
             {
-                if (first)
+                if (following)
                 {
-                    first = false
+                    outArray.push(',')
                 }
                 else
                 {
-                    out.push(',')
+                    following = true
                 }
 
-                this.Append(item, out)
+                this.Build(level + 1, item, outArray)
             }
-            out.push(']')
-        }
-        else if (this.Is('Map', anything))
-        {
-            let first = true
 
-            out.push('{')
-            for (let [key, val] of anything)
+            outArray.push(']')
+        }
+        else if (this.Is('Map', thing))
+        {
+            outArray.push('{')
+
+            let following = false
+            for (let [key, val] of thing)
             {
-                if (first)
+                if (following)
                 {
-                    first = false
+                    outArray.push(',')
                 }
                 else
                 {
-                    out.push(',')
+                    following = true
                 }
 
-                this.Append(key, out)
-                out.push(':')
-                this.Append(val, out)
+                this.Build(level + 1, key, outArray)
+                outArray.push(':')
+                this.Build(level + 1, val, outArray)
             }
-            out.push('}')
+
+            outArray.push('}')
         }
-        else if (this.Is('function', anything))
+        else if (this.Is('string', thing))
         {
-            out.push('{function}')
+            if (level > 0)
+            {
+                outArray.push(`"${thing}"`)
+            }
+            else
+            {
+                outArray.push(thing)
+            }
         }
-        else if (this.Is('object', anything))
+        else if (this.Is('function', thing))
         {
-            //NOTE: do not traverse an object,
-            //the number of its child nodes may be very large.
-            out.push(`{${anything}}`)
+            outArray.push(`<function ${thing.name}>`)
+        }
+        else if (this.Is('object', thing))
+        {
+            outArray.push(JSON.stringify(thing))
         }
         else
         {
-            out.push(String(anything))
+            outArray.push(String(thing))
         }
     }
 
-    private static Is(type: string, anything: any): boolean
+    private static Is(type: string, thing: any): boolean
     {
-        if (type == 'Array')
-        {
-            return anything && Array.isArray(anything)
-        }
         if (type == 'Map')
         {
-            return anything && Object.getPrototypeOf(anything).constructor == Map
+            return Object.getPrototypeOf(thing).constructor == Map
         }
         if (type == 'Set')
         {
-            return anything && Object.getPrototypeOf(anything).constructor == Set
+            return Object.getPrototypeOf(thing).constructor == Set
+        }
+        if (type == 'Array')
+        {
+            return Array.isArray(thing)
         }
 
-        return typeof anything == type
+        return typeof(thing) == type
     }
 }

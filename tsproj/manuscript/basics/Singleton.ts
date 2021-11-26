@@ -4,7 +4,7 @@ export function Singleton<T>()
     {
         private static s_instance: any
 
-        static GetInstance(): T
+        public static GetInstance(): T
         {
             if (!this.s_instance)
             {
@@ -13,7 +13,7 @@ export function Singleton<T>()
             return this.s_instance
         }
 
-        static get instance(): T
+        public static get instance(): T
         {
             return this.GetInstance()
         }
