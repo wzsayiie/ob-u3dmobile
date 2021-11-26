@@ -102,6 +102,23 @@ namespace U3DMobile
             }
             return element;
         }
+
+        public string GetElementUrl(PackageSource source, string pkgName, string resName)
+        {
+            if (string.IsNullOrWhiteSpace(pkgName))
+            {
+                Log.Error("try get item url with empty package name");
+                return null;
+            }
+            if (string.IsNullOrWhiteSpace(resName))
+            {
+                Log.Error("try get item url with empty resource name");
+                return null;
+            }
+
+            AddPackage(source,  pkgName);
+            return UIPackage.GetItemURL(pkgName, resName);
+        }
     }
 }
 
