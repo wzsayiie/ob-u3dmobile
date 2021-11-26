@@ -18,7 +18,7 @@ export class Log
         })
     }
 
-    private static Merge(objects: any[], callback: (text: string) => void)
+    private static Merge(objects: any[], callback: (text: string) => void): void
     {
         if (objects.length == 0)
         {
