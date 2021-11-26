@@ -118,6 +118,7 @@ namespace U3DMobile
             if (_rootNode != null)
             {
                 UnbindOutlets(this);
+                _rootNode = null;
             }
 
             //NOTE: it must be re-bound,
@@ -131,10 +132,6 @@ namespace U3DMobile
                     element = element,
                 };
                 BindOutlets(this);
-            }
-            else
-            {
-                _rootNode = null;
             }
         }
 
