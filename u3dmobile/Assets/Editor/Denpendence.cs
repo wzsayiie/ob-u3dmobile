@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace U3DMobile.Editor
 {
-    public static class Dependence
+    static class Dependence
     {
         [MenuItem("U3DMOBILE/Install Puerts")]
         public static void InstallPuerts()

@@ -2,20 +2,6 @@ using UnityEngine;
 
 namespace U3DMobile
 {
-    public abstract class Singleton<T> where T : class, new()
-    {
-        private static T s_instance;
-
-        public static T GetInstance()
-        {
-            if (s_instance == null)
-            {
-                s_instance = new T();
-            }
-            return s_instance;
-        }
-    }
-
     public static class GameObjectRoot
     {
         private static GameObject s_root;
@@ -43,6 +29,20 @@ namespace U3DMobile
                 gameObject.transform.parent = GameObjectRoot.GetRoot().transform;
 
                 s_instance = gameObject.AddComponent<T>();
+            }
+            return s_instance;
+        }
+    }
+
+    public abstract class Singleton<T> where T : class, new()
+    {
+        private static T s_instance;
+
+        public static T GetInstance()
+        {
+            if (s_instance == null)
+            {
+                s_instance = new T();
             }
             return s_instance;
         }

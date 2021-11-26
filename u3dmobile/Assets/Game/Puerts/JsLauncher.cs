@@ -6,7 +6,7 @@ using Puerts;
 
 namespace U3DMobile
 {
-    public class JsLauncher : Singleton<JsLauncher>
+    class JsLauncher : Singleton<JsLauncher>
     {
         public static JsLauncher instance { get { return GetInstance(); } }
 

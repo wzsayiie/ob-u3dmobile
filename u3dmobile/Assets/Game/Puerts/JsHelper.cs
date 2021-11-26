@@ -7,7 +7,7 @@ using System.Text;
 
 namespace U3DMobile
 {
-    public static class PuertsHelper
+    public static class JsHelper
     {
         public static ArrayBuffer UTF8Buffer(string value)
         {

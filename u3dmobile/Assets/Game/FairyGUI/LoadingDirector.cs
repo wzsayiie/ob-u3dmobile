@@ -6,7 +6,7 @@ using FairyGUI;
 
 namespace U3DMobile
 {
-    public class LoadingDirector : UIComDirector
+    class LoadingDirector : UIComDirector
     {
         protected override void OnCreate()
         {

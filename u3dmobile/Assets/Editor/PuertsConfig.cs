@@ -10,7 +10,7 @@ using System.Reflection;
 namespace U3DMobile.Editor
 {
     [Configure]
-    public static class PuertsConfig
+    static class PuertsConfig
     {
         private static readonly List<Type> specialCollection = new List<Type>()
         {

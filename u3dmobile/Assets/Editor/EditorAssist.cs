@@ -8,7 +8,7 @@ using UnityEngine.Networking;
 
 namespace U3DMobile.Editor
 {
-    public class EditorAssist
+    class EditorAssist
     {
         #region singleton instance
 
