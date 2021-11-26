@@ -6,8 +6,10 @@ using FairyGUI;
 
 namespace U3DMobile
 {
-    public class UIComDirector
+    class UIComDirector
     {
+        private bool          _filled ;
+        private GObject       _element;
         private PackageSource _source ;
         private string        _pkgName;
         private string        _resName;
@@ -21,8 +23,46 @@ namespace U3DMobile
         public UICom  content { get { return _content; } }
         public bool   shown   { get { return _shown  ; } }
 
+        public UIComDirector(GObject element = null)
+        {
+            SetElement(element);
+        }
+
+        public UIComDirector(PackageSource source, string pkgName, string resName)
+        {
+            SetResource(source, pkgName, resName);
+        }
+
+        public void SetElement(GObject element)
+        {
+            if (element == null)
+            {
+                return;
+            }
+
+            //NOTE: cause the director needs to control the life cycle of the ui,
+            //it can only be filled once.
+            if (_filled)
+            {
+                return;
+            }
+
+            _filled  = true   ;
+            _element = element;
+        }
+
         public void SetResource(PackageSource source, string pkgName, string resName)
         {
+            if (string.IsNullOrWhiteSpace(pkgName) || string.IsNullOrWhiteSpace(resName))
+            {
+                return;
+            }
+            if (_filled)
+            {
+                return;
+            }
+
+            _filled  = true   ;
             _source  = source ;
             _pkgName = pkgName;
             _resName = resName;
@@ -30,15 +70,25 @@ namespace U3DMobile
 
         public void Show()
         {
+            if (!_filled)
+            {
+                return;
+            }
+
             if (!_created)
             {
                 //actions:
-                GObject element = PackageManager.instance.CreateElement(_source, _pkgName, _resName);
+                if (_element == null)
+                {
+                    _element = PackageManager.instance.CreateElement(_source, _pkgName, _resName);
+                }
 
-                _window = new Window();
-                _window.contentPane = element.asCom;
+                _window = new Window
+                {
+                    contentPane = _element.asCom,
+                };
 
-                _content = new UICom(element);
+                _content = new UICom(_element, _resName);
                 _content.BindOutlets(this);
 
                 //notification.
@@ -80,12 +130,13 @@ namespace U3DMobile
             if (_created)
             {
                 //actions:
-                _content.SetRootElement(null);
                 _content.UnbindOutlets(this);
                 _content = null;
 
                 _window.Dispose();
                 _window = null;
+
+                _element = null;
 
                 //notification.
                 _created = false;

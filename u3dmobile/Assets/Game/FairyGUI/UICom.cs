@@ -9,7 +9,7 @@ using System.Reflection;
 
 namespace U3DMobile
 {
-    public class UIOutletAttribute : Attribute
+    class UIOutletAttribute : Attribute
     {
         public string path;
 
@@ -19,105 +19,50 @@ namespace U3DMobile
         }
     }
 
-    class UIElementNode
+    class UIOutletFieldItem
     {
-        public GObject element;
-        public Dictionary<string, Controller> controllers;
-        public Dictionary<string, UIElementNode> childNodes;
+        public const char PathSeperator = '.';
+
+        public FieldInfo fieldInfo;
+        public string[]  pathSteps;
     }
 
-    public class UICom
+    class UIOutletFieldMap : Singleton<UIOutletFieldMap>
     {
-        private UIElementNode _rootNode;
+        public static UIOutletFieldMap instance { get { return GetInstance(); } }
 
-        public UICom(GObject element = null)
+        private Dictionary<Type, UIOutletFieldItem[]> _fieldMap;
+
+        public UIOutletFieldItem[] GetFields(Type type)
         {
-            if (element != null)
+            //null type.
+            if (type == null)
             {
-                SetRootElement(element);
+                return null;
             }
+
+            //get items from caches.
+            if (_fieldMap == null)
+            {
+                _fieldMap = new Dictionary<Type, UIOutletFieldItem[]>();
+            }
+            if (_fieldMap.ContainsKey(type))
+            {
+                return _fieldMap[type];
+            }
+
+            //add new items.
+            UIOutletFieldItem[] items = CollectFields(type);
+            _fieldMap.Add(type, items);
+            return items;
         }
 
-        public void SetRootElement(GObject element)
+        private UIOutletFieldItem[] CollectFields(Type type)
         {
-            if (element != null)
-            {
-                _rootNode = new UIElementNode
-                {
-                    element = element
-                };
-                GenerateNodes(_rootNode);
-
-                BindOutlets(this);
-            }
-            else
-            {
-                _rootNode = null;
-
-                UnbindOutlets(this);
-            }
-        }
-
-        public GObject rootElement
-        {
-            get { return _rootNode?.element; }
-        }
-
-        private void GenerateNodes(UIElementNode node)
-        {
-            if (!(node.element is GComponent))
-            {
-                node.controllers = null;
-                node.childNodes  = null;
-                return;
-            }
-
-            GComponent component = node.element.asCom;
-
-            //get controllers.
-            if (component.Controllers.Count > 0)
-            {
-                node.controllers = new Dictionary<string, Controller>();
-                for (int n = 0; n < component.Controllers.Count; ++n)
-                {
-                    Controller controller = component.GetControllerAt(n);
-                    node.controllers.Add(controller.name, controller);
-                }
-            }
-            else
-            {
-                node.controllers = null;
-            }
-
-            //get child nodes.
-            if (component.numChildren == 0)
-            {
-                node.childNodes = null;
-                return;
-            }
-
-            node.childNodes = new Dictionary<string, UIElementNode>();
-            for (int n = 0; n < component.numChildren; ++n)
-            {
-                var child = new UIElementNode
-                {
-                    element = component.GetChildAt(n)
-                };
-                GenerateNodes(child);
-
-                node.childNodes.Add(child.element.name, child);
-            }
-        }
-
-        public void BindOutlets(object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
+            var list = new List<UIOutletFieldItem>();
 
             BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            FieldInfo[] fields = target.GetType().GetFields(flags);
+            FieldInfo[] fields = type.GetFields(flags);
             foreach (FieldInfo field in fields)
             {
                 //in general, the length of the "attributes" should be 0 or 1.
@@ -127,35 +72,115 @@ namespace U3DMobile
                     continue;
                 }
 
-                string path  = (attributes[0] as UIOutletAttribute).path;
-                object value = FindElement(path);
-                if (value == null)
+                string path = (attributes[0] as UIOutletAttribute).path;
+                if (string.IsNullOrWhiteSpace(path))
                 {
-                    value = FindController(path);
+                    Log.Error("'{0}.{1}' with fault outlet path '{2}'", type.Name, field.Name, path);
+                    continue;
                 }
 
+                string[] steps = path.Split(UIOutletFieldItem.PathSeperator);
+                list.Add(new UIOutletFieldItem
+                {
+                    fieldInfo = field,
+                    pathSteps = steps,
+                });
+            }
+
+            return list.ToArray();
+        }
+    }
+
+    class UIElementNode
+    {
+        //NOTE: the top level ui objects of fairy-gui have no names.
+        public string  elementName;
+        public GObject element;
+
+        public bool scanned;
+
+        public Dictionary<string, UIElementNode> childNodes ;
+        public Dictionary<string, Controller   > controllers;
+        public Dictionary<string, Transition   > transitions;
+    }
+
+    class UICom
+    {
+        private UIElementNode _rootNode;
+
+        public UICom(GObject element = null, string name = null)
+        {
+            SetRootElement(element, name);
+        }
+
+        public void SetRootElement(GObject element, string name = null)
+        {
+            if (_rootNode != null)
+            {
+                UnbindOutlets(this);
+            }
+
+            //NOTE: it must be re-bound,
+            //regardless of whether the element is the same as the current element.
+            //because the ui tree may change.
+            if (element != null)
+            {
+                _rootNode = new UIElementNode
+                {
+                    elementName = name ?? element.name,
+                    element = element,
+                };
+                BindOutlets(this);
+            }
+            else
+            {
+                _rootNode = null;
+            }
+        }
+
+        public GObject rootElement
+        {
+            get { return _rootNode?.element; }
+        }
+
+        public void BindOutlets(object target)
+        {
+            if (target == null)
+            {
+                return;
+            }
+            if (_rootNode == null)
+            {
+                return;
+            }
+
+            UIOutletFieldItem[] fieldItems = UIOutletFieldMap.instance.GetFields(target.GetType());
+            foreach (UIOutletFieldItem item in fieldItems)
+            {
+                object value = FindValue(item.pathSteps);
                 if (value == null)
                 {
-                    Log.Error("not found ui element or controller for '{0}.{1}' with path '{2}'",
+                    Log.Error("in '{0}', not found any suitable object for '{1}.{2}'",
+                        _rootNode.elementName,
                         target.GetType().Name,
-                        field.Name,
-                        path
+                        item.fieldInfo.Name
                     );
                     continue;
                 }
-                if (!field.FieldType.IsAssignableFrom(value.GetType()))
+
+                if (!item.fieldInfo.FieldType.IsAssignableFrom(value.GetType()))
                 {
                     Log.Error(
                         "the field '{0}.{1}: {2}' is incompatible with the type '{3}'",
                         target.GetType().Name,
-                        field.Name,
-                        field.FieldType.Name,
+                        item.fieldInfo.Name,
+                        item.fieldInfo.FieldType.Name,
                         value.GetType().Name
                     );
                     continue;
                 }
 
-                field.SetValue(target, value);
+                item.fieldInfo.SetValue(target, value);
             }
         }
 
@@ -166,62 +191,44 @@ namespace U3DMobile
                 return;
             }
 
-            BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
-            FieldInfo[] fields = target.GetType().GetFields(flags);
-            foreach (FieldInfo field in fields)
+            UIOutletFieldItem[] fieldItems = UIOutletFieldMap.instance.GetFields(target.GetType());
+            foreach (UIOutletFieldItem item in fieldItems)
             {
-                object[] attributes = field.GetCustomAttributes(typeof(UIOutletAttribute), false);
-                if (attributes.Length == 1)
-                {
-                    field.SetValue(target, null);
-                }
+                item.fieldInfo.SetValue(target, null);
             }
         }
 
-        public GObject FindElement(string path)
+        private object FindValue(string[] steps)
         {
-            if (string.IsNullOrWhiteSpace(path))
+            UIElementNode node = ExpandNode(steps, steps.Length - 1);
+            if (node == null)
             {
                 return null;
             }
 
-            string[] steps = path.Split('.');
-
-            UIElementNode node = FindNode(steps, 0, steps.Length);
-            return node?.element;
-        }
-
-        public Controller FindController(string path)
-        {
-            if (string.IsNullOrWhiteSpace(path))
+            string lastStep = steps[steps.Length - 1];
+            if (node.childNodes != null && node.childNodes.ContainsKey(lastStep))
             {
-                return null;
+                return node.childNodes[lastStep].element;
+            }
+            if (node.controllers != null && node.controllers.ContainsKey(lastStep))
+            {
+                return node.controllers[lastStep];
+            }
+            if (node.transitions != null && node.transitions.ContainsKey(lastStep))
+            {
+                return node.transitions[lastStep];
             }
 
-            string[] steps = path.Split('.');
-
-            UIElementNode node = FindNode(steps, 0, steps.Length - 1);
-            if (node != null)
-            {
-                string lastStep = steps[steps.Length - 1];
-                if (node.controllers.ContainsKey(lastStep))
-                {
-                    return node.controllers[lastStep];
-                }
-            }
             return null;
         }
 
-        private UIElementNode FindNode(string[] steps, int begin, int end)
+        private UIElementNode ExpandNode(string[] steps, int end)
         {
-            if (_rootNode == null)
-            {
-                return null;
-            }
-
             UIElementNode node = _rootNode;
+            ScanNode(node);
 
-            for (int n = begin; n < end; ++n)
+            for (int n = 0; n < end; ++n)
             {
                 if (node.childNodes == null)
                 {
@@ -229,17 +236,137 @@ namespace U3DMobile
                 }
 
                 string step = steps[n];
-                if (node.childNodes.ContainsKey(step))
-                {
-                    node = node.childNodes[step];
-                }
-                else
+                if (!node.childNodes.ContainsKey(step))
                 {
                     return null;
                 }
+
+                node = node.childNodes[step];
+                ScanNode(node);
             }
 
             return node;
+        }
+
+        private void ScanNode(UIElementNode node)
+        {
+            if (node.scanned)
+            {
+                return;
+            }
+
+            GComponent com = node.element.asCom;
+            if (com == null)
+            {
+                return;
+            }
+
+            if (com._children != null && com._children.Count > 0)
+            {
+                node.childNodes = new Dictionary<string, UIElementNode>();
+                foreach (GObject element in com._children)
+                {
+                    var child = new UIElementNode
+                    {
+                        elementName = element.name,
+                        element = element,
+                    };
+                    node.childNodes.Add(child.element.name, child);
+                }
+            }
+
+            if (com._controllers != null && com._controllers.Count > 0)
+            {
+                node.controllers = new Dictionary<string, Controller>();
+                foreach (Controller controller in com._controllers)
+                {
+                    node.controllers.Add(controller.name, controller);
+                }
+            }
+
+            if (com._transitions != null && com._transitions.Count > 0)
+            {
+                node.transitions = new Dictionary<string, Transition>();
+                foreach (Transition transition in com._transitions)
+                {
+                    node.transitions.Add(transition.name, transition);
+                }
+            }
+
+            node.scanned = true;
+        }
+
+        public GObject FindElement(string path)
+        {
+            UIElementNode node = FindParentNode(path, out string lastStep);
+            if (node == null)
+            {
+                return null;
+            }
+
+            if (node.childNodes != null && node.childNodes.ContainsKey(lastStep))
+            {
+                return node.childNodes[lastStep].element;
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public Controller FindController(string path)
+        {
+            UIElementNode node = FindParentNode(path, out string lastStep);
+            if (node == null)
+            {
+                return null;
+            }
+
+            if (node.controllers != null && node.controllers.ContainsKey(lastStep))
+            {
+                return node.controllers[lastStep];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public Transition FindTransition(string path)
+        {
+            UIElementNode node = FindParentNode(path, out string lastStep);
+            if (node == null)
+            {
+                return null;
+            }
+
+            if (node.transitions != null && node.transitions.ContainsKey(lastStep))
+            {
+                return node.transitions[lastStep];
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        private UIElementNode FindParentNode(string path, out string lastStep)
+        {
+            lastStep = null;
+
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return null;
+            }
+            if (_rootNode == null)
+            {
+                return null;
+            }
+
+            string[] steps = path.Split(UIOutletFieldItem.PathSeperator);
+            lastStep = steps[steps.Length - 1];
+
+            return ExpandNode(steps, steps.Length - 1);
         }
     }
 }
