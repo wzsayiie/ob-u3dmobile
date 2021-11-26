@@ -15,13 +15,13 @@ namespace U3DMobile
         private string        _resName;
 
         private Window _window ;
-        private UICom  _content;
+        private UICom  _com    ;
         private bool   _created;
         private bool   _shown  ;
 
-        public Window window  { get { return _window ; } }
-        public UICom  content { get { return _content; } }
-        public bool   shown   { get { return _shown  ; } }
+        public Window window { get { return _window; } }
+        public UICom  com    { get { return _com   ; } }
+        public bool   shown  { get { return _shown ; } }
 
         public UIComDirector(GObject element = null)
         {
@@ -88,8 +88,8 @@ namespace U3DMobile
                     contentPane = _element.asCom,
                 };
 
-                _content = new UICom(_element, _resName);
-                _content.BindOutlets(this);
+                _com = new UICom(_element, _resName);
+                _com.BindOutlets(this);
 
                 //notification.
                 _created = true;
@@ -130,8 +130,8 @@ namespace U3DMobile
             if (_created)
             {
                 //actions:
-                _content.UnbindOutlets(this);
-                _content = null;
+                _com.UnbindOutlets(this);
+                _com = null;
 
                 _window.Dispose();
                 _window = null;
