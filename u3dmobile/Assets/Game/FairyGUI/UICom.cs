@@ -75,7 +75,7 @@ namespace U3DMobile
                 string path = (attributes[0] as UIOutletAttribute).path;
                 if (string.IsNullOrWhiteSpace(path))
                 {
-                    Log.Error("'{0}.{1}' with fault outlet path '{2}'", type.Name, field.Name, path);
+                    Log.Error("outlet '{0}.{1}' with a empty path", type.Name, field.Name);
                     continue;
                 }
 
@@ -157,7 +157,7 @@ namespace U3DMobile
                 object value = FindValue(item.pathSteps);
                 if (value == null)
                 {
-                    Log.Error("in '{0}', not found any suitable object for '{1}.{2}'",
+                    Log.Error("from '{0}', not found any suitable object for '{1}.{2}'",
                         _rootNode.elementName,
                         target.GetType().Name,
                         item.fieldInfo.Name
