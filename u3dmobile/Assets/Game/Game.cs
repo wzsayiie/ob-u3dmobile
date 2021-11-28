@@ -5,5 +5,6 @@ class Game : MonoBehaviour
 {
     protected void Awake()
     {
+        JsLauncher.instance.Start();
     }
 }
