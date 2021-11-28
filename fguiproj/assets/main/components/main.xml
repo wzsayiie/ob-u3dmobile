@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="1080,1920">
-  <displayList/>
+  <displayList>
+    <component id="n0_fkcw" name="button" src="fkcw1" fileName="components/main_button.xml" xy="440,930">
+      <relation target="" sidePair="center-center,middle-middle"/>
+      <Button title="Main"/>
+    </component>
+  </displayList>
 </component>

@@ -2,6 +2,7 @@
 <packageDescription id="j5mpksmp">
   <resources>
     <component id="gfoh0" name="main.xml" path="/components/" exported="true"/>
+    <component id="fkcw1" name="main_button.xml" path="/components/"/>
   </resources>
   <publish name=""/>
 </packageDescription>
