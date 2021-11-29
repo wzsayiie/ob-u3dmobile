@@ -26,7 +26,7 @@ namespace U3DMobile
             }
             catch (Exception)
             {
-                StringBuilder builder = new StringBuilder();
+                var builder = new StringBuilder();
 
                 builder.Append("\"");
                 builder.Append(format);

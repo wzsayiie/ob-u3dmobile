@@ -38,7 +38,7 @@ namespace U3DMobile
                 return null;
             }
 
-            ActionConfig config = new ActionConfig()
+            var config = new ActionConfig
             {
                 runOnce  = true,
                 nextTick = tickSeconds() + seconds,
@@ -55,7 +55,7 @@ namespace U3DMobile
                 return null;
             }
 
-            ActionConfig config = new ActionConfig()
+            var config = new ActionConfig
             {
                 runOnce  = false,
                 nextTick = tickSeconds() + seconds,

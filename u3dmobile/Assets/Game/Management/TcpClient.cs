@@ -133,9 +133,9 @@ namespace U3DMobile
 
             _connectionCallback = callback;
 
-            var args = new SocketAsyncEventArgs();
-            args.RemoteEndPoint = endPoint;
-            args.Completed += (object socket, SocketAsyncEventArgs args) =>
+            var eventArgs = new SocketAsyncEventArgs();
+            eventArgs.RemoteEndPoint = endPoint;
+            eventArgs.Completed += (object socket, SocketAsyncEventArgs args) =>
             {
                 TcpMainThreadQueue.instance.Post(() =>
                 {
@@ -144,7 +144,7 @@ namespace U3DMobile
             };
 
             _socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-            _socket.ConnectAsync(args);
+            _socket.ConnectAsync(eventArgs);
         }
 
         public void Disconnect()
@@ -174,19 +174,17 @@ namespace U3DMobile
                     _socket.Disconnect(false);
                     _socket = null;
                 }
-                if (_disconnectionListener != null)
-                {
-                    _disconnectionListener();
-                }
+                
+                _disconnectionListener?.Invoke();
             }
         }
 
-        private void OnConnectionCompleted(SocketAsyncEventArgs args)
+        private void OnConnectionCompleted(SocketAsyncEventArgs eventArgs)
         {
             bool success;
 
-            if (args.LastOperation == SocketAsyncOperation.Connect
-             && args.SocketError   == SocketError.Success)
+            if (eventArgs.LastOperation == SocketAsyncOperation.Connect
+             && eventArgs.SocketError   == SocketError.Success)
             {
                 //connection succeeded, to start receiving data:
                 success = true;
@@ -218,25 +216,25 @@ namespace U3DMobile
                 var result = new TcpConnectionResult()
                 {
                     success   = success,
-                    errorCode = args.SocketError,
+                    errorCode = eventArgs.SocketError,
                 };
                 _connectionCallback(result);
                 _connectionCallback = null;
             }
         }
 
-        private void OnReceivingCompleted(SocketAsyncEventArgs args)
+        private void OnReceivingCompleted(SocketAsyncEventArgs eventArgs)
         {
-            if (args                  == _receivingEventArgs
-             && args.LastOperation    == SocketAsyncOperation.Receive
-             && args.SocketError      == SocketError.Success
-             && args.BytesTransferred >  0)
+            if (eventArgs                  == _receivingEventArgs
+             && eventArgs.LastOperation    == SocketAsyncOperation.Receive
+             && eventArgs.SocketError      == SocketError.Success
+             && eventArgs.BytesTransferred >  0)
             {
                 int begin = 0;
-                int end = args.BytesTransferred;
+                int end = eventArgs.BytesTransferred;
                 while (begin < end)
                 {
-                    ParsePackage(args.Buffer, ref begin, end);
+                    ParsePackage(eventArgs.Buffer, ref begin, end);
                 }
 
                 //start next receiving.
@@ -352,9 +350,9 @@ namespace U3DMobile
                 return;
             }
 
-            var args = new SocketAsyncEventArgs();
-            args.SetBuffer(data, 0, data.Length);
-            args.Completed += (object socket, SocketAsyncEventArgs args) =>
+            var eventArgs = new SocketAsyncEventArgs();
+            eventArgs.SetBuffer(data, 0, data.Length);
+            eventArgs.Completed += (object socket, SocketAsyncEventArgs args) =>
             {
                 TcpMainThreadQueue.instance.Post(() =>
                 {
@@ -362,14 +360,14 @@ namespace U3DMobile
                 });
             };
 
-            _socket.SendAsync(args);
+            _socket.SendAsync(eventArgs);
         }
 
-        private void OnSendingCompleted(SocketAsyncEventArgs args)
+        private void OnSendingCompleted(SocketAsyncEventArgs eventArgs)
         {
-            if (args.LastOperation    != SocketAsyncOperation.Send
-             || args.SocketError      != SocketError.Success
-             || args.BytesTransferred <= 0)
+            if (eventArgs.LastOperation    != SocketAsyncOperation.Send
+             || eventArgs.SocketError      != SocketError.Success
+             || eventArgs.BytesTransferred <= 0)
             {
                 Log.Error("an abnormal sending occurred here");
             }
