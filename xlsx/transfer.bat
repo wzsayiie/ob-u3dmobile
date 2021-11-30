@@ -19,7 +19,7 @@ if %newest%==%desc% (
     call npm install
 )
 
-::transfer proto files.
+::transfer xlsx files.
 call node transfer.js
 
 :end
