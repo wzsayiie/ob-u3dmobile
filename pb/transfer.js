@@ -2,16 +2,17 @@ const InputPBFilesDir = './definitions'
 const OutputJavasFile = '../tsproj/manuscript/data/pb.js'
 const OutputTypesFile = '../tsproj/manuscript/data/pb.d.ts'
 
-const $fs   = require('fs')
-const $path = require('path')
-const $pbjs = require('protobufjs/cli/pbjs')
-const $pbts = require('protobufjs/cli/pbts')
-const $proc = require('process')
+const fs    = require('fs')
+const npath = require('path')
+const pbjs  = require('protobufjs/cli/pbjs')
+const pbts  = require('protobufjs/cli/pbts')
+const proc  = require('process')
 
 function main() {
     enterCurrentDir()
 
-    let files = collectFiles(InputPBFilesDir)
+    let files = []
+    collectFiles(InputPBFilesDir, files)
     if (files.length == 0) {
         console.log('not found any proto files')
         return
@@ -32,31 +33,25 @@ function main() {
 }
 
 function enterCurrentDir() {
-    $proc.chdir(__dirname)
+    proc.chdir(__dirname)
 }
 
 /**
- * @param   {string  } dir
- * @returns {string[]}
+ * @param {string}   dir
+ * @param {string[]} outFiles
  */
-function collectFiles(dir) {
-    let files = []
-
-    let subitems = $fs.readdirSync(dir)
+function collectFiles(dir, outFiles) {
+    let subitems = fs.readdirSync(dir)
     for (let item of subitems) {
-        let path = $path.join(dir, item)
-        let stat = $fs.statSync(path)
+        let path = npath.join(dir, item)
+        let stat = fs.statSync(path)
 
         if (stat.isDirectory()) {
-            let rest = collectFiles(path)
-            files = [ ...files, ...rest ]
-
+            collectFiles(path, outFiles)
         } else if (path.endsWith('.proto')) {
-            files.push(path)
+            outFiles.push(path)
         }
     }
-
-    return files
 }
 
 /**
@@ -81,19 +76,21 @@ function transferJavas(files, callback) {
         ...files
     ]
 
-    $pbjs.main(arguments, (error) => {
+    pbjs.main(arguments, (error) => {
         callback(error)
     });
 }
 
-/** @param {(error:Object) => void} callback */
+/**
+ * @param {(error:Object) => void} callback
+ */
 function transferTypes(callback) {
     let arguments = [
         '--out', OutputTypesFile,
         OutputJavasFile
     ]
 
-    $pbts.main(arguments, (error) => {
+    pbts.main(arguments, (error) => {
         callback(error)
     })
 }
