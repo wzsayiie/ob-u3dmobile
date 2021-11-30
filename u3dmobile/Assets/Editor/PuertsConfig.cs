@@ -12,12 +12,12 @@ namespace U3DMobile.Editor
     [Configure]
     static class PuertsConfig
     {
-        private static readonly List<Type> specialCollection = new List<Type>()
+        private static readonly List<Type> specialCollection = new List<Type>
         {
             typeof(UnityEngine.GameObject)
         };
 
-        private static readonly HashSet<string> namespaceCollection = new HashSet<string>()
+        private static readonly HashSet<string> namespaceCollection = new HashSet<string>
         {
             "FairyGUI",
             "U3DMobile",
@@ -37,7 +37,7 @@ namespace U3DMobile.Editor
 
         private static IEnumerable<Type> GetNamespaceTypes()
         {
-            List<Type> types = new List<Type>();
+            var types = new List<Type>();
 
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             foreach (Assembly assembly in assemblies)

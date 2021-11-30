@@ -1,7 +1,6 @@
 //use the menu items "U3DMOBILE/Install XX" to install fairy-gui runtime and puerts,
 //and add the macros on the project setting "Scripting Define Symbols".
-#if U3DMOBILE_USE_FAIRYGUI
-#if U3DMOBILE_USE_PUERTS
+#if U3DMOBILE_USE_FAIRYGUI && U3DMOBILE_USE_PUERTS
 
 using FairyGUI;
 
@@ -15,5 +14,4 @@ namespace U3DMobile
     }
 }
 
-#endif
 #endif
