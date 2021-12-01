@@ -23,16 +23,6 @@ namespace U3DMobile
         public UICom  com    { get { return _com   ; } }
         public bool   shown  { get { return _shown ; } }
 
-        public UIComDirector(GObject element = null)
-        {
-            SetElement(element);
-        }
-
-        public UIComDirector(PackageSource source, string pkgName, string resName)
-        {
-            SetResource(source, pkgName, resName);
-        }
-
         public void SetElement(GObject element)
         {
             if (element == null)
@@ -88,7 +78,8 @@ namespace U3DMobile
                     contentPane = _element.asCom,
                 };
 
-                _com = new UICom(_element, _resName);
+                _com = new UICom();
+                _com.SetRootElement(_element, _resName);
                 _com.BindOutlets(this);
 
                 //notification.

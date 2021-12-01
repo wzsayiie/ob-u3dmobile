@@ -108,11 +108,6 @@ namespace U3DMobile
     {
         private UIElementNode _rootNode;
 
-        public UICom(GObject element = null, string name = null)
-        {
-            SetRootElement(element, name);
-        }
-
         public void SetRootElement(GObject element, string name = null)
         {
             if (_rootNode != null)
