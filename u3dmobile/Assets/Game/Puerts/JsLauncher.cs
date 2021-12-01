@@ -1,7 +1,8 @@
-//use the menu item "U3DMOBILE/Install Puerts" to install puerts,
-//and add "U3DMOBILE_USE_PUERTS" on the project setting "Scripting Define Symbols".
-#if U3DMOBILE_USE_PUERTS
+//use the menu items "U3DMOBILE/Install XX" to install fairy-gui runtime and puerts,
+//and add the macros on the project setting "Scripting Define Symbols".
+#if U3DMOBILE_USE_FAIRYGUI && U3DMOBILE_USE_PUERTS
 
+using FairyGUI;
 using Puerts;
 
 namespace U3DMobile
@@ -17,6 +18,13 @@ namespace U3DMobile
             if (_environment == null)
             {
                 _environment = new JsEnv();
+
+                //IMPORTANT: declare the delegate types need to passed from ts to c#.
+
+                //GList.itemRenderer: (int index, GObject item) => void
+                _environment.UsingAction<int, GObject>();
+                //GList.itemProvider: (int index) => string
+                _environment.UsingFunc<int, string>();
             }
             return _environment;
         }
