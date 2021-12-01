@@ -5,6 +5,7 @@
             "../u3dmobile/Assets/Puerts/Typing",
             "../u3dmobile/Assets/Gen/Typing"
         ],
+        "experimentalDecorators": true,
         "moduleResolution": "node",
         "target": "ESNext"
     },

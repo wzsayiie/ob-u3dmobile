@@ -2,6 +2,23 @@ import { FairyGUI  } from 'csharp'
 import { Log       } from './Log'
 import { U3DMobile } from 'csharp'
 
+const OutletsKey    = 'OUTLETS'
+const PathSeparator = '.'
+
+export function UIOutlet(path: string)
+{
+    return function (target: Object, key: string): void
+    {
+        let cls = target.constructor
+
+        if (!cls[OutletsKey])
+        {
+            cls[OutletsKey] = {}
+        }
+        cls[OutletsKey][key] = path
+    }
+}
+
 class UIElementNode
 {
     //NOTE: the top level ui objects of fairy-gui have no names.
@@ -15,16 +32,9 @@ class UIElementNode
     public transitions: Map<string, FairyGUI.Transition>
 }
 
-const PathSeparator = '.'
-
 export class UICom
 {
     private _rootNode: UIElementNode
-
-    public constructor(element?: FairyGUI.GObject, name?: string)
-    {
-        this.SetRootElement(element, name)
-    }
 
     public SetRootElement(element: FairyGUI.GObject, name?: string): void
     {
@@ -114,7 +124,7 @@ export class UICom
     {
         if (target.constructor)
         {
-            return target.constructor['outlets']
+            return target.constructor[OutletsKey]
         }
         else
         {
