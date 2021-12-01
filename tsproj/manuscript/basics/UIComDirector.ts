@@ -15,14 +15,9 @@ export class UIComDirector
     private _created: boolean
     private _shown  : boolean
 
-    public get window (): FairyGUI.Window { return this._window }
-    public get content(): UICom           { return this._com    }
-    public get shown  (): boolean         { return this._shown  }
-
-    public constructor(source?: U3DMobile.PackageSource, pkgName?: string, resName?: string)
-    {
-        this.SetResource(source, pkgName, resName)
-    }
+    public get window(): FairyGUI.Window { return this._window }
+    public get com   (): UICom           { return this._com    }
+    public get shown (): boolean         { return this._shown  }
 
     public SetElement(element: FairyGUI.GObject): void
     {
@@ -83,7 +78,8 @@ export class UIComDirector
             this._window = new FairyGUI.Window()
             this._window.contentPane = this._element.asCom
 
-            this._com = new UICom(this._element, this._resName)
+            this._com = new UICom()
+            this._com.SetRootElement(this._element, this._resName)
             this._com.BindOutlets(this)
 
             //notification.
