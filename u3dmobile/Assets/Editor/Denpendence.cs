@@ -15,14 +15,14 @@ namespace U3DMobile.Editor
             {
                 logsWord = "puerts-sources",
 
-                thirdUrl = "https://github.com/Tencent/puerts/archive/refs/tags/Unity_Plugin_1.0.18.zip",
+                thirdUrl = "https://github.com/Tencent/puerts/archive/refs/tags/Unity_Plugin_1.1.2.zip",
                 localZip = "DEPENDENCE/puerts-sources.zip",
                 raiseDir = "DEPENDENCE/puerts-sources",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.0.18/unity/Assets/Puerts/Src",
-                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.0.18/unity/Assets/Puerts/Typing",
+                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Src",
+                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Typing",
                 },
                 dstFiles = new List<string>
                 {
@@ -36,7 +36,7 @@ namespace U3DMobile.Editor
             {
                 logsWord = "puerts-plugins",
 
-                thirdUrl = "https://github.com/Tencent/puerts/releases/download/Unity_Plugin_1.0.18/Plugins_V8_ver13.tgz",
+                thirdUrl = "https://github.com/Tencent/puerts/releases/download/Unity_Plugin_1.1.2/Plugins_V8_ver14.tgz",
                 localZip = "DEPENDENCE/puerts-plugins.tgz",
                 raiseDir = "DEPENDENCE/puerts-plugins",
 
