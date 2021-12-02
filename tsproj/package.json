@@ -5,10 +5,12 @@
         "release": "webpack --config wp-release.js"
     },
     "dependencies": {
-        "typescript" : "^4.0.0",
-        "webpack"    : "^5.0.0",
-        "webpack-cli": "^4.0.0",
-        "ts-loader"  : "^9.0.0",
-        "protobufjs" : "^6.0.0"
+        "webpack-cli": "*",
+        "webpack": "*",
+        "typescript": "*",
+        "ts-loader": "*",
+        "source-map-support": "*",
+        "buffer": "*",
+        "protobufjs": "*"
     }
 }
