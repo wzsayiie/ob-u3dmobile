@@ -4,11 +4,13 @@
         "develop": "webpack --config wp-develop.js --watch",
         "release": "webpack --config wp-release.js"
     },
-    "dependencies": {
+    "devDependencies": {
         "webpack-cli": "*",
         "webpack": "*",
         "typescript": "*",
-        "ts-loader": "*",
+        "ts-loader": "*"
+    },
+    "dependencies": {
         "source-map-support": "*",
         "buffer": "*",
         "protobufjs": "*"
