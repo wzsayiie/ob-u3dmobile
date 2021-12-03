@@ -6,6 +6,7 @@ using Puerts;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using UnityEngine;
 
 namespace U3DMobile.Editor
 {
@@ -14,12 +15,29 @@ namespace U3DMobile.Editor
     {
         private static readonly List<Type> specialCollection = new List<Type>
         {
-            typeof(UnityEngine.GameObject)
+            typeof(UnityEngine.Object),
+
+            typeof(GameObject    ),
+            typeof(Component     ),
+            typeof(Transform     ),
+            typeof(Behaviour     ),
+            typeof(Animator      ),
+            typeof(Camera        ),
+            typeof(Renderer      ),
+            typeof(MeshRenderer  ),
+            typeof(SpriteRenderer),
+            
+            typeof(Vector3  ),
+            typeof(Texture  ),
+            typeof(Texture2D),
+            typeof(Sprite   ),
+            typeof(Mesh     ),
+            typeof(Material ),
         };
 
         private static readonly HashSet<string> namespaceCollection = new HashSet<string>
         {
-            "FairyGUI",
+            "FairyGUI" ,
             "U3DMobile",
         };
 
