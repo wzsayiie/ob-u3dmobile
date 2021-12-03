@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <component size="1080,1920">
   <displayList>
-    <component id="n0_lqbl" name="_button" src="lqbl3" fileName="components/loading_button.xml" xy="440,930">
+    <component id="n0_lqbl" name="button" src="lqbl3" fileName="components/loading_button.xml" xy="440,930">
       <relation target="" sidePair="center-center,middle-middle"/>
       <Button title="loading"/>
     </component>
