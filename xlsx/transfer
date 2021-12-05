@@ -1,1 +1,19 @@
 #!/bin/zsh
+
+set -e -u
+
+cd `dirname $0`
+
+# check if node.js is installed.
+if ! which node > /dev/null; then
+    echo ERROR: not found node.js in the environment
+    exit
+fi
+
+# install modules if needed.
+if [ "package.json" -nt "package-lock.json" ]; then
+    npm install
+fi
+
+# transfer xlsx files.
+node transfer.js
