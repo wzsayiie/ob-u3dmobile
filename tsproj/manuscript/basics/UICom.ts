@@ -197,7 +197,7 @@ export class UICom
             return
         }
 
-        let numChildren = U3DMobile.UIHelper.numChildrenOf(com)
+        let numChildren = U3DMobile.UIHelper.NumChildrenOf(com)
         if (numChildren > 0)
         {
             node.childNodes = new Map<string, UIElementNode>()
@@ -213,7 +213,7 @@ export class UICom
             }
         }
 
-        let numControllers = U3DMobile.UIHelper.numControllersOf(com)
+        let numControllers = U3DMobile.UIHelper.NumControllersOf(com)
         if (numControllers > 0)
         {
             node.controllers = new Map<string, FairyGUI.Controller>()
@@ -224,7 +224,7 @@ export class UICom
             }
         }
 
-        let numTransitions = U3DMobile.UIHelper.numTransitionsOf(com)
+        let numTransitions = U3DMobile.UIHelper.NumTransitionsOf(com)
         if (numTransitions > 0)
         {
             node.transitions = new Map<string, FairyGUI.Transition>()

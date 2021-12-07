@@ -8,9 +8,9 @@ namespace U3DMobile
 {
     public static class UIHelper
     {
-        public static int numChildrenOf   (GComponent com) { return com._children   .Count; }
-        public static int numControllersOf(GComponent com) { return com._controllers.Count; }
-        public static int numTransitionsOf(GComponent com) { return com._transitions.Count; }
+        public static int NumChildrenOf   (GComponent com) { return com._children   .Count; }
+        public static int NumControllersOf(GComponent com) { return com._controllers.Count; }
+        public static int NumTransitionsOf(GComponent com) { return com._transitions.Count; }
     }
 }
 
