@@ -1,42 +1,34 @@
 import { Singleton } from './Singleton'
 
-export class DevTool extends Singleton<DevTool>()
-{
-    public Install(): void
-    {
+export class DevTool extends Singleton<DevTool>() {
+
+    public Install(): void {
         let csharp = require('csharp')
         let puerts = require('puerts')
 
         //"source-map-support" need these functions to read sources.
-        puerts.registerBuildinModule('path',
-        {    
-            dirname: function (path: string): boolean
-            {
+        puerts.registerBuildinModule('path', {
+
+            dirname: function (path: string): boolean {
                 return csharp.System.IO.Path.GetDirectoryName(path)
             },
 
-            resolve: function (dir: string, url: string): string
-            {
+            resolve: function (dir: string, url: string): string {
                 let prefix = 'webpack://u3dmobile/manuscript/'
-                if (url.startsWith(prefix))
-                {
+                if (url.startsWith(prefix)) {
                     return url.substr(prefix.length)
-                }
-                else
-                {
+                } else {
                     return url
                 }
             },
         })
-        puerts.registerBuildinModule('fs',
-        {
-            existsSync: function (path: string): boolean
-            {
+        puerts.registerBuildinModule('fs', {
+
+            existsSync: function (path: string): boolean {
                 return csharp.System.IO.File.Exists(path)
             },
 
-            readFileSync: function (path: string): string
-            {
+            readFileSync: function (path: string): string {
                 return csharp.System.IO.File.ReadAllText(path)
             },
         })

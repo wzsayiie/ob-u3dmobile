@@ -6,16 +6,15 @@ import { UIComDirector } from '../basics/UIComDirector'
 import { UIOutlet      } from '../basics/UICom'
 import { UnityEngine   } from 'csharp'
 
-export class MainDirector extends UIComDirector
-{
+export class MainDirector extends UIComDirector {
+
     @UIOutlet('button')
     private _button: FairyGUI.GButton
 
     @UIOutlet('button.title')
     private _title: FairyGUI.GTextField
 
-    protected OnCreate(): void
-    {
+    protected OnCreate(): void {
         super.OnCreate()
     }
 }
