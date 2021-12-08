@@ -5,7 +5,7 @@ module.exports = {
 
     externals: {
         csharp: 'commonjs csharp',
-	    puerts: 'commonjs puerts',
+        puerts: 'commonjs puerts',
 
         //"source-map-support" depends on node.js modules "path" and "fs".
         //these modules will be injected on runtime.
