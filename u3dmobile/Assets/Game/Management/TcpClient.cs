@@ -65,24 +65,136 @@ namespace U3DMobile
         }
     }
 
+    class TcpPackageReader
+    {
+        private TcpByteOrder _byteOrder;
+
+        private byte[] _packageHead   = new byte[TcpReceivingPackage.LengthSize];
+        private byte[] _package       = null;
+        private int    _packageLength = 0;
+        private int    _currentLength = 0;
+
+        private bool _finished;
+        private bool _abnormal;
+
+        public TcpByteOrder byteOrder
+        {
+            set { _byteOrder = value; }
+            get { return _byteOrder ; }
+        }
+
+        public void Read(byte[] buffer, ref int beginRef, int end)
+        {
+            if (_finished)
+            {
+                return;
+            }
+
+            //read the package length.
+            if (_currentLength < _packageHead.Length)
+            {
+                int needLength  = _packageHead.Length - _currentLength;
+                int validLength = end - beginRef;
+                int stepLength  = Math.Min(needLength, validLength);
+
+                Array.Copy(buffer, beginRef, _packageHead, _currentLength, stepLength);
+                _currentLength += stepLength;
+                beginRef += stepLength;
+
+                if (stepLength < needLength)
+                {
+                    //still read the length of package next time.
+                    return;
+                }
+
+                _packageLength = ReadPackageLength(_packageHead);
+                if (_packageLength < _packageHead.Length)
+                {
+                    //illegal package length.
+                    _finished = true;
+                    _abnormal = true;
+                    return;
+                }
+
+                //ready buffer to read the rest of the package.
+                _package = new byte[_packageLength];
+                Array.Copy(_packageHead, _package, _packageHead.Length);
+            }
+
+            //read the rest of the package:
+            int stillNeed  = _packageLength - _currentLength;
+            int stillValid = end - beginRef;
+            int stillStep  = Math.Min(stillNeed, stillValid);
+
+            Array.Copy(buffer, beginRef, _package, _currentLength, stillStep);
+            _currentLength += stillStep;
+            beginRef += stillStep;
+
+            if (stillStep == stillNeed)
+            {
+                //receiving completed.
+                _finished = true;
+            }
+        }
+
+        private int ReadPackageLength(byte[] bytes)
+        {
+            int value = 0;
+
+            if (_byteOrder == TcpByteOrder.LittleEndian)
+            {
+                for (int index = bytes.Length - 1; index >= 0; --index)
+                {
+                    value = (value << 8) + bytes[index];
+                }
+            }
+            else /* BigEndian */
+            {
+                for (int index = 0; index < bytes.Length; ++index)
+                {
+                    value = (value << 8) + bytes[index];
+                }
+            }
+
+            return value;
+        }
+
+        public void Reset()
+        {
+            _package       = null;
+            _packageLength = 0;
+            _currentLength = 0;
+
+            _finished = false;
+            _abnormal = false;
+        }
+
+        public bool finished { get { return _finished ; } }
+        public bool abnormal { get { return _abnormal ; } }
+
+        public int packageLength
+        {
+            get { return _packageLength; }
+        }
+
+        public byte[] package
+        {
+            get { return _package; }
+        }
+    }
+
     public class TcpClient : Singleton<TcpClient>
     {
         public static TcpClient instance { get { return GetInstance(); } }
-
-        private Socket _socket;
-        private SocketAsyncEventArgs _receivingEventArgs;
 
         private TcpConnectionCallback    _connectionCallback;
         private TcpReceivingListener     _receivingListener;
         private TcpDisconnectionListener _disconnectionListener;
 
-        private const int ReceivingMaxPackageLength = 4098;
-        private const int ReceivingBufferLength     = 1024;
+        private Socket _socket;
+        private SocketAsyncEventArgs _receivingEventArgs;
 
-        private TcpByteOrder _receivingByteOrder      = TcpByteOrder.LittleEndian;
-        private byte[]       _receivingPackage        = new byte[ReceivingMaxPackageLength];
-        private int          _receivingExpectedLength = 0;
-        private int          _receivingCurrentLength  = 0;
+        private TcpPackageReader _receivingPackageReader = new TcpPackageReader();
 
         public TcpClient()
         {
@@ -104,16 +216,13 @@ namespace U3DMobile
 
         public TcpByteOrder receivingByteOrder
         {
-            set { _receivingByteOrder = value; }
-            get { return _receivingByteOrder ; }
+            set { _receivingPackageReader.byteOrder = value; }
+            get { return _receivingPackageReader.byteOrder ; }
         }
 
         public bool isConnecting
         {
-            get
-            {
-                return _socket != null && _socket.Connected;
-            }
+            get { return _socket != null && _socket.Connected; }
         }
 
         public void Connect(string address, TcpConnectionCallback callback)
@@ -189,11 +298,11 @@ namespace U3DMobile
                 //connection succeeded, to start receiving data:
                 success = true;
 
-                _receivingExpectedLength = 0;
-                _receivingCurrentLength  = 0;
+                _receivingPackageReader.Reset();
 
+                byte[] singleBuffer = new byte[4096];
                 _receivingEventArgs = new SocketAsyncEventArgs();
-                _receivingEventArgs.SetBuffer(new byte[ReceivingBufferLength], 0, ReceivingBufferLength);
+                _receivingEventArgs.SetBuffer(singleBuffer, 0, singleBuffer.Length);
                 _receivingEventArgs.Completed += (object socket, SocketAsyncEventArgs args) =>
                 {
                     TcpMainThreadQueue.instance.Post(() =>
@@ -234,7 +343,27 @@ namespace U3DMobile
                 int end = eventArgs.BytesTransferred;
                 while (begin < end)
                 {
-                    ParsePackage(eventArgs.Buffer, ref begin, end);
+                    _receivingPackageReader.Read(eventArgs.Buffer, ref begin, end);
+                    if (!_receivingPackageReader.finished)
+                    {
+                        continue;
+                    }
+
+                    if (_receivingPackageReader.abnormal)
+                    {
+                        Log.Error($"fatal tcp package length: {_receivingPackageReader.packageLength}");
+                        _receivingPackageReader.Reset();
+                        continue;
+                    }
+
+                    //send receiving notification.
+                    var package = new TcpReceivingPackage()
+                    {
+                        length = _receivingPackageReader.packageLength,
+                        data   = _receivingPackageReader.package,
+                    };
+                    _receivingListener?.Invoke(package);
+                    _receivingPackageReader.Reset();
                 }
 
                 //start next receiving.
@@ -248,93 +377,6 @@ namespace U3DMobile
                 //here it will be executed.
                 DisconnectActively(false);
             }
-        }
-
-        private void ParsePackage(byte[] buffer, ref int refBegin, int end)
-        {
-            //get the package length from the begining of stream.
-            if (_receivingCurrentLength < TcpReceivingPackage.LengthSize)
-            {
-                int needLength  = TcpReceivingPackage.LengthSize - _receivingCurrentLength;
-                int validLength = end - refBegin;
-                int stepLength  = Math.Min(needLength, validLength);
-
-                Array.Copy(buffer, refBegin, _receivingPackage, _receivingCurrentLength, stepLength);
-                _receivingCurrentLength += stepLength;
-                refBegin += stepLength;
-
-                if (stepLength == needLength)
-                {
-                    _receivingExpectedLength = ParsePackageLength(_receivingPackage);
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            //get the rest of the package:
-            int stillNeed  = _receivingExpectedLength - _receivingCurrentLength;
-            int stillValid = end - refBegin;
-            int stillStep  = Math.Min(stillNeed, stillValid);
-
-            if (stillStep > 0)
-            {
-                Array.Copy(buffer, refBegin, _receivingPackage, _receivingCurrentLength, stillStep);
-                _receivingCurrentLength += stillStep;
-                refBegin += stillStep;
-            }
-
-            if (stillStep == stillNeed)
-            {
-                //to notify the listener.
-                if (_receivingListener != null)
-                {
-                    byte[] data = new byte[_receivingExpectedLength];
-                    Array.Copy(_receivingPackage, 0, data, 0, _receivingExpectedLength);
-
-                    var package = new TcpReceivingPackage()
-                    {
-                        length = _receivingExpectedLength,
-                        data   = data,
-                    };
-                    _receivingListener(package);
-                }
-
-                //reset to receive next package.
-                _receivingExpectedLength = 0;
-                _receivingCurrentLength  = 0;
-            }
-        }
-
-        private int ParsePackageLength(byte[] bytes)
-        {
-            int value = 0;
-            if (_receivingByteOrder == TcpByteOrder.LittleEndian)
-            {
-                for (int index = TcpReceivingPackage.LengthSize - 1; index >= 0; --index)
-                {
-                    value = (value << 8) + bytes[index];
-                }
-            }
-            else /* BigEndian */
-            {
-                for (int index = 0; index < TcpReceivingPackage.LengthSize; ++index)
-                {
-                    value = (value << 8) + bytes[index];
-                }
-            }
-
-            if (value < TcpReceivingPackage.LengthSize)
-            {
-                Log.Error($"fatal tcp receiving package length: {value}");
-            }
-            else if (value > ReceivingMaxPackageLength)
-            {
-                Log.Error($"the tcp receiving package is too big: {value}");
-            }
-
-            return value;
         }
 
         public void Send(byte[] data)
