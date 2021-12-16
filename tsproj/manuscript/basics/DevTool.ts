@@ -9,14 +9,14 @@ export class DevTool extends Singleton<DevTool>() {
         //"source-map-support" need these functions to read sources.
         puerts.registerBuildinModule('path', {
 
-            dirname: function (path: string): boolean {
+            dirname: function (path: string): string {
                 return csharp.System.IO.Path.GetDirectoryName(path)
             },
 
             resolve: function (dir: string, url: string): string {
                 let prefix = 'webpack://u3dmobile/manuscript/'
                 if (url.startsWith(prefix)) {
-                    return url.substr(prefix.length)
+                    return url.substring(prefix.length)
                 } else {
                     return url
                 }
