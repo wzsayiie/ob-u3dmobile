@@ -105,7 +105,7 @@ namespace U3DMobile
         public byte[] responseBody;
     }
 
-    public class HttpClient : SingletonBehaviour<HttpClient>
+    class HttpClient : SingletonBehaviour<HttpClient>
     {
         public static HttpClient instance { get { return GetInstance(); } }
 
