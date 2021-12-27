@@ -1,14 +1,15 @@
 import { FairyGUI  } from 'csharp'
+import { Log       } from './Log'
 import { U3DMobile } from 'csharp'
 import { UICom     } from './UICom'
 
 export class UIComDirector {
 
-    private _filled : boolean
-    private _element: FairyGUI.GObject
-    private _source : U3DMobile.PackageSource
-    private _pkgName: string
-    private _resName: string
+    private _filled   : boolean
+    private _theGCom  : FairyGUI.GComponent
+    private _pkgSource: U3DMobile.PackageSource
+    private _pkgName  : string
+    private _comName  : string
 
     private _window : FairyGUI.Window
     private _com    : UICom
@@ -19,36 +20,37 @@ export class UIComDirector {
     public get com   (): UICom           { return this._com    }
     public get shown (): boolean         { return this._shown  }
 
-    public SetElement(element: FairyGUI.GObject): void {
-        if (!element) {
-            return
-        }
-
-        //NOTE: cause the director needs to control the life cycle of the ui,
-        //it can only be filled once.
+    public SetGCom(aGCom: FairyGUI.GComponent): void {
         if (this._filled) {
+            Log.Error(`can not set ui com repeatedly`)
             return
         }
 
-        this._filled  = true
-        this._element = element
+        if (aGCom) {
+            this._filled  = true
+            this._theGCom = aGCom
+        }
     }
 
-    public SetResource(source: U3DMobile.PackageSource, pkgName: string, resName: string): void {
-        if (!pkgName || pkgName.match(/^\s*$/)) {
-            return
-        }
-        if (!resName || resName.match(/^\s*$/)) {
-            return
-        }
+    public SetResource(source: U3DMobile.PackageSource, pkgName: string, comName: string): void {
         if (this._filled) {
+            Log.Error(`can not set package resource repeatedly`)
             return
         }
 
-        this._filled  = true
-        this._source  = source
-        this._pkgName = pkgName
-        this._resName = resName
+        if (!pkgName || pkgName.match(/^\s*$/)) {
+            Log.Error(`try to set a empty package name`)
+            return
+        }
+        if (!comName || comName.match(/^\s*$/)) {
+            Log.Error(`try to set a empty component name`)
+            return
+        }
+
+        this._filled    = true
+        this._pkgSource = source
+        this._pkgName   = pkgName
+        this._comName   = comName
     }
 
     public Show(): void {
@@ -58,18 +60,23 @@ export class UIComDirector {
 
         if (!this._created) {
             //actions:
-            if (!this._element) {
-                this._element = U3DMobile.PackageManager.instance.CreateElement(
-                    this._source, this._pkgName, this._resName
-                )
+            if (!this._theGCom) {
+                let manager = U3DMobile.PackageManager.instance
+                let aGObject = manager.CreateGObject(this._pkgSource, this._pkgName, this._comName)
+
+                this._theGCom = aGObject.asCom
+                if (!this._theGCom) {
+                    Log.Error(`failed to create '${this._pkgName}/${this._comName}'`)
+                    return
+                }
             }
 
             this._window = new FairyGUI.Window()
-            this._window.contentPane = this._element.asCom
+            this._window.contentPane = this._theGCom
 
             this._com = new UICom()
-            this._com.SetRootElement(this._element, this._resName)
-            this._com.BindOutlets(this)
+            this._com.SetGCom(this._theGCom, this._comName)
+            this._com.Bind(this)
 
             //notification.
             this._created = true
@@ -104,13 +111,12 @@ export class UIComDirector {
         }
         if (this._created) {
             //actions:
-            this._com.UnbindOutlets(this)
             this._com = null
 
             this._window.Dispose()
             this._window = null
 
-            this._element = null
+            this._theGCom = null
 
             //notification.
             this._created = false

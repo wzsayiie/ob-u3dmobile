@@ -2,135 +2,122 @@ import { FairyGUI  } from 'csharp'
 import { Log       } from './Log'
 import { U3DMobile } from 'csharp'
 
-const OutletsKey    = 'OUTLETS'
+const UIBindKey     = 'UIBind'
 const PathSeparator = '.'
 
-export function UIOutlet(path: string) {
-    return function (target: Object, key: string): void {
-        let cls = target.constructor
+enum UIBindType {
+    MemberField ,   //set a ui com from resource to the member field.
+    ButtonClick ,   //set the method to aGButton.onClick.
+    ItemProvider,   //set the method as aGList.itemProvider.
+    ItemRenderer,   //set the method as aGList.itemRenderer.
+}
 
-        if (!cls[OutletsKey]) {
-            cls[OutletsKey] = {}
+interface UIBindEntry {
+    propertyKey: string
+    bindType   : UIBindType
+    searchPath : string
+    pathSteps  : string[]
+}
+
+export function UIBind(path: string): Function {
+    return function (target: Object, key: string, desc: PropertyDescriptor): void {
+        let clazz = target.constructor
+
+        if (!path || path.match(/^\s*$/)) {
+            Log.Error(`property ${clazz.name}.${key} with a empty path`)
+            return
         }
-        cls[OutletsKey][key] = path
+
+        let entry: { [n: string]: UIBindEntry } = clazz[UIBindKey]
+        if (!entry) {
+            entry = {}
+            clazz[UIBindKey] = entry
+        }
+
+        let steps = path.split(PathSeparator)
+        if (desc) {
+            //target[key] should be a method.
+
+            if (steps.length <= 1) {
+                Log.Error(`property ${clazz.name}.${key} with a illegal path`)
+                return
+            }
+
+            let bindType: UIBindType
+
+            let lastStep = steps[steps.length - 1]
+            if /**/ (lastStep == 'onClick'     ) { bindType = UIBindType.ButtonClick  }
+            else if (lastStep == 'itemProvider') { bindType = UIBindType.ItemProvider }
+            else if (lastStep == 'itemRenderer') { bindType = UIBindType.ItemRenderer }
+            else {
+                Log.Error(`property ${clazz.name}.${key} with a unsupported path`)
+                return
+            }
+
+            entry[key] = {
+                propertyKey: key,
+                bindType   : bindType,
+                searchPath : path,
+                pathSteps  : steps,
+            }
+
+        } else {
+            //target[key] should be a field.
+
+            entry[key] = {
+                propertyKey: key,
+                bindType   : UIBindType.MemberField,
+                searchPath : path,
+                pathSteps  : steps,
+            }
+        }
     }
 }
 
-class UIElementNode {
+class UIGObjectNode {
     //NOTE: the top level ui objects of fairy-gui have no names.
-    public elementName: string
-    public element    : FairyGUI.GObject
+    public theGObjectName: string
+    public theGObject    : FairyGUI.GObject
 
     public scanned: boolean
 
-    public childNodes : Map<string, UIElementNode>
+    public childNodes : Map<string, UIGObjectNode>
     public controllers: Map<string, FairyGUI.Controller>
     public transitions: Map<string, FairyGUI.Transition>
 }
 
 export class UICom {
 
-    private _rootNode: UIElementNode
+    private _rootNode   : UIGObjectNode
+    private _boundTarget: object
 
-    public SetRootElement(element: FairyGUI.GObject, name?: string): void {
+    constructor(aGCom?: FairyGUI.GComponent, name?: string) {
+        this.SetGCom(aGCom, name)
+    }
+
+    public SetGCom(aGCom: FairyGUI.GComponent, name?: string): void {
+        //NOTE: assignment operation is one-time.
         if (this._rootNode) {
-            this.UnbindOutlets(this)
-            this._rootNode = null
-        }
-
-        //NOTE: it must be re-bound,
-        //regardless of whether the element is the same as the current element.
-        //because the ui tree may change.
-        if (element) {
-            this._rootNode = new UIElementNode()
-            this._rootNode.elementName = name ?? element.name
-            this._rootNode.element = element
-
-            this.BindOutlets(this)
-        }
-    }
-
-    public get rootElement(): FairyGUI.GObject {
-        return this._rootNode?.element
-    }
-
-    public BindOutlets(target: Object): void {
-        if (!target || !this._rootNode) {
+            Log.Error(`can not set ui com repeatedly`)
             return
         }
 
-        let fields = this.GetOutletFields(target)
-        if (!fields) {
-            return
-        }
-
-        for (let name in fields) {
-            let path = fields[name]
-            if (!path || path.match(/^\s*$/)) {
-                Log.Error(
-                    `outlet "${target.constructor.name}.${name}" with a empty path`
-                )
-                continue
-            }
-
-            let value = this.FindValue(path)
-            if (!value) {
-                Log.Error(
-                    `from "${this._rootNode.elementName}", ` +
-                    `not found any suitable ui object for ` +
-                    `"${target.constructor.name}.${name}"`
-                )
-                continue
-            }
-
-            target[name] = value
+        if (aGCom) {
+            this._rootNode = new UIGObjectNode()
+            this._rootNode.theGObjectName = name ?? aGCom.name
+            this._rootNode.theGObject = aGCom
         }
     }
 
-    public UnbindOutlets(target: Object): void {
-        if (!target) {
-            return
-        }
-
-        let fields = this.GetOutletFields(target)
-        if (!fields) {
-            return
-        }
-
-        for (let name in fields) {
-            target[name] = null
-        }
-    }
-
-    private GetOutletFields(target: Object): { [index: string]: string } {
-        if (target.constructor) {
-            return target.constructor[OutletsKey]
+    public get theGCom(): FairyGUI.GComponent {
+        if (this._rootNode) {
+            return this._rootNode.theGObject.asCom
         } else {
             return null
         }
     }
 
-    private FindValue(path: string): any {
-        let steps = path.split(PathSeparator)
-
-        let node = this.ExpandNode(steps, steps.length - 1)
-        if (!node) {
-            return null
-        }
-
-        let last = steps[steps.length - 1]
-        let kids = node.childNodes
-        let ctrs = node.controllers
-        let tras = node.transitions
-
-        if (kids && kids.has(last)) { return kids.get(last).element }
-        if (ctrs && ctrs.has(last)) { return ctrs.get(last) }
-        if (tras && tras.has(last)) { return tras.get(last) }
-
-        return null
-    }
-
-    private ExpandNode(steps: string[], end: number): UIElementNode {
+    private AdvanceToNode(steps: string[], end: number): UIGObjectNode {
         let node = this._rootNode
         this.ScanNode(node)
 
@@ -151,28 +138,29 @@ export class UICom {
         return node
     }
 
-    private ScanNode(node: UIElementNode): void {
+    private ScanNode(node: UIGObjectNode): void {
         if (node.scanned) {
             return
         }
+        node.scanned = true
 
-        let com = node.element.asCom
+        let com = node.theGObject.asCom
         if (!com) {
             return
         }
 
         let numChildren = U3DMobile.UIHelper.NumChildrenOf(com)
         if (numChildren > 0) {
-            node.childNodes = new Map<string, UIElementNode>()
+            node.childNodes = new Map<string, UIGObjectNode>()
 
             for (let n = 0; n < numChildren; ++n) {
-                let element = com.GetChildAt(n)
+                let childGObject = com.GetChildAt(n)
 
-                let child = new UIElementNode()
-                child.elementName = element.name
-                child.element = element
+                let child = new UIGObjectNode()
+                child.theGObjectName = childGObject.name
+                child.theGObject = childGObject
 
-                node.childNodes.set(element.name, child)
+                node.childNodes.set(childGObject.name, child)
             }
         }
 
@@ -195,54 +183,151 @@ export class UICom {
                 node.transitions.set(transition.name, transition)
             }
         }
-
-        node.scanned = true
     }
 
-    public FindElement(path: string): FairyGUI.GObject {
-        let last = { value: '' }
-        let node = this.FindParentNode(path, last)
+    public FindGObject   (path: string) { return <FairyGUI.GObject   > this.Find(path, 'O') }
+    public FindController(path: string) { return <FairyGUI.Controller> this.Find(path, 'C') }
+    public FindTransition(path: string) { return <FairyGUI.Transition> this.Find(path, 'T') }
 
-        if (node && node.childNodes && node.childNodes.has(last.value)) {
-            return node.childNodes.get(last.value).element
-        } else {
-            return null
-        }
-    }
-
-    public FindController(path: string): FairyGUI.Controller {
-        let last = { value: '' }
-        let node = this.FindParentNode(path, last)
-
-        if (node && node.controllers && node.controllers.has(last.value)) {
-            return node.controllers.get(last.value)
-        } else {
-            return null
-        }
-    }
-
-    public FindTransition(path: string): FairyGUI.Transition {
-        let last = { value: '' }
-        let node = this.FindParentNode(path, last)
-
-        if (node && node.transitions && node.transitions.has(last.value)) {
-            return node.transitions.get(last.value)
-        } else {
-            return null
-        }
-    }
-
-    private FindParentNode(path: string, lastStep: { value: string }): UIElementNode {
+    private Find(path: string, targetType: string): object {
         if (!path || path.match(/^\s*$/)) {
+            Log.Error(`try to find ui item with a empty path`)
             return null
         }
+
         if (!this._rootNode) {
             return null
         }
 
-        let steps = path.split(PathSeparator)
-        lastStep.value = steps[steps.length - 1]
+        let rootName = this._rootNode.theGObjectName
+        let steps    = path.split(PathSeparator)
+        let lastStep = steps[steps.length - 1]
 
-        return this.ExpandNode(steps, steps.length - 1)
+        let node = this.AdvanceToNode(steps, steps.length - 1)
+        if (!node) {
+            Log.Error(`not found '${path}' in '${rootName}'`)
+            return null
+        }
+
+        if (targetType == 'O') {
+            if (!node.childNodes?.has(lastStep)) {
+                Log.Error(`not found ui object '${path}' in '${rootName}'`)
+                return null
+            }
+            return node.childNodes.get(lastStep).theGObject
+
+        } else if (targetType == 'C') {
+            if (!node.controllers?.has(lastStep)) {
+                Log.Error(`not found controller '${path}' in '${rootName}'`)
+                return null
+            }
+            return node.controllers.get(lastStep)
+
+        } else /* if (targetType == 'T') */ {
+            if (!node.transitions?.has(lastStep)) {
+                Log.Error(`not found transition '${path}' in '${rootName}'`)
+                return null
+            }
+            return node.transitions.get(lastStep)
+        }
+    }
+
+    public Bind(target: object): void {
+        //NOTE: bind operation is one-time.
+        if (this._boundTarget) {
+            Log.Error(`can not bind ui com repeatedly`)
+            return
+        }
+
+        if (!target) {
+            Log.Error(`try to bind ui com to a null object`)
+            return
+        }
+        if (!this._rootNode) {
+            return
+        }
+
+        let entries: { [n: string]: UIBindEntry } = target.constructor[UIBindKey]
+        if (!entries) {
+            return
+        }
+
+        for (let key in entries) {
+            let entry = entries[key]
+            let steps = entry.pathSteps
+
+            let node = this.AdvanceToNode(steps, steps.length - 1)
+            if (!node) {
+                Log.Error(`not found '${entry.searchPath}' in '${this._rootNode.theGObjectName}'`)
+                continue
+            }
+
+            switch (entry.bindType) {
+            case UIBindType.MemberField : this.BindMemberField (entry, node, target); break
+            case UIBindType.ButtonClick : this.BindButtonClick (entry, node, target); break
+            case UIBindType.ItemProvider: this.BindItemProvider(entry, node, target); break
+            case UIBindType.ItemRenderer: this.BindItemRenderer(entry, node, target); break
+            }
+        }
+    }
+
+    public BindMemberField(entry: UIBindEntry, parent: UIGObjectNode, target: object): void {
+        let rootName = this._rootNode.theGObject
+        let lastStep = entry.pathSteps[entry.pathSteps.length - 1]
+
+        if (!parent.childNodes?.has(lastStep)) {
+            Log.Error(`not found '${entry.searchPath}' in '${rootName}'`)
+            return
+        }
+
+        let node  = parent.childNodes.get(lastStep)
+        let value = node.theGObject
+
+        target[entry.propertyKey] = value
+    }
+
+    public BindButtonClick(entry: UIBindEntry, node: UIGObjectNode, target: object): void {
+        let root   = this._rootNode.theGObjectName
+        let button = node.theGObject.asButton
+
+        if (!button) {
+            Log.Error(`'${entry.searchPath}' in '${root}' is not a button`)
+            return
+        }
+
+        button.onClick.Set(() => {
+            let func = <() => void> target[entry.propertyKey]
+            func.call(target)
+        })
+    }
+
+    public BindItemProvider(entry: UIBindEntry, node: UIGObjectNode, target: object): void {
+        let root = this._rootNode.theGObjectName
+        let list = node.theGObject.asList
+
+        if (!list) {
+            Log.Error(`'${entry.searchPath}' in '${root}' is not a list`)
+            return
+        }
+
+        list.itemProvider = (index: number): string => {
+            let func = <(n: number) => string> target[entry.propertyKey]
+            return func.call(target, index)
+        }
+    }
+
+    public BindItemRenderer(entry: UIBindEntry, node: UIGObjectNode, target: object): void {
+        let root = this._rootNode.theGObjectName
+        let list = node.theGObject.asList
+
+        if (!list) {
+            Log.Error(`'${entry.searchPath}' in '${root}' is not a list`)
+            return
+        }
+
+        list.itemRenderer = (index: number, item: FairyGUI.GObject): void => {
+            let func = <(n: number, i: FairyGUI.GObject) => void> target[entry.propertyKey]
+            func.call(target, index, item)
+        }
     }
 }
