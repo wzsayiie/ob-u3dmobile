@@ -20,7 +20,7 @@ interface UIBindEntry {
 }
 
 export function UIBind(path: string): Function {
-    return function (target: Object, key: string, desc: PropertyDescriptor): void {
+    return function (target: object, key: string, desc: PropertyDescriptor): void {
         let clazz = target.constructor
 
         if (!path || path.match(/^\s*$/)) {
