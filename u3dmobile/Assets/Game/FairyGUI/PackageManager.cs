@@ -25,7 +25,7 @@ namespace U3DMobile
         {
             if (string.IsNullOrWhiteSpace(name))
             {
-                Log.Error("try load package with empty name");
+                Log.Error($"try load package with empty name");
                 return;
             }
             if (_addedPackages.ContainsKey(name))
@@ -50,7 +50,7 @@ namespace U3DMobile
 
             if (package == null)
             {
-                Log.Error("there is no package {0}", name);
+                Log.Error($"there is no package {name}");
                 return;
             }
             _addedPackages.Add(name, package);
@@ -84,12 +84,12 @@ namespace U3DMobile
         {
             if (string.IsNullOrWhiteSpace(pkgName))
             {
-                Log.Error("try create a ui object with empty package name");
+                Log.Error($"try create a ui object with empty package name");
                 return null;
             }
             if (string.IsNullOrWhiteSpace(resName))
             {
-                Log.Error("try create a ui object with empty resource name");
+                Log.Error($"try create a ui object with empty resource name");
                 return null;
             }
 
@@ -98,7 +98,7 @@ namespace U3DMobile
             GObject aGObject = UIPackage.CreateObject(pkgName, resName);
             if (aGObject == null)
             {
-                Log.Error("failed to create '{0}/{1}'", pkgName, resName);
+                Log.Error($"failed to create '{pkgName}/{resName}'");
             }
             return aGObject;
         }
@@ -107,12 +107,12 @@ namespace U3DMobile
         {
             if (string.IsNullOrWhiteSpace(pkgName))
             {
-                Log.Error("try get item url with empty package name");
+                Log.Error($"try get item url with empty package name");
                 return null;
             }
             if (string.IsNullOrWhiteSpace(resName))
             {
-                Log.Error("try get item url with empty resource name");
+                Log.Error($"try get item url with empty resource name");
                 return null;
             }
 

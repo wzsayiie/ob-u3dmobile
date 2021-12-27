@@ -41,12 +41,12 @@ namespace U3DMobile
         {
             if (string.IsNullOrWhiteSpace(_requestUrl))
             {
-                Log.Error("http request url is empty");
+                Log.Error($"http request url is empty");
                 return;
             }
             if (responder == null)
             {
-                Log.Error("the responder is null for '{0}'", _requestUrl);
+                Log.Error($"the responder is null for '{_requestUrl}'");
                 return;
             }
 
@@ -77,7 +77,7 @@ namespace U3DMobile
             }
             else
             {
-                Log.Error("unsupported method '{0}' for url '{1}'", method, _requestUrl);
+                Log.Error($"unsupported method '{method}' for url '{_requestUrl}'");
                 return;
             }
 

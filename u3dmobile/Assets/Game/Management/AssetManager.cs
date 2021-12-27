@@ -90,14 +90,14 @@ namespace U3DMobile
         {
             if (string.IsNullOrWhiteSpace(path))
             {
-                Log.Error("try load asset by empty path");
+                Log.Error($"try load asset by empty path");
                 return null;
             }
 
             string suitablePath = ConvertPath(path, out bool isStatic);
             if (suitablePath == null)
             {
-                Log.Error("fatal asset path: {0}", path);
+                Log.Error($"fatal asset path: {path}");
                 return null;
             }
 
@@ -113,7 +113,7 @@ namespace U3DMobile
 
             if (asset == null)
             {
-                Log.Error("there is no asset on: {0}", path);
+                Log.Error($"there is no asset on: {path}");
             }
             return asset;
         }

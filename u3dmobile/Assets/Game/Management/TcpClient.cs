@@ -229,14 +229,14 @@ namespace U3DMobile
         {
             if (isConnecting)
             {
-                Log.Error("the tcp already connected.");
+                Log.Error($"the tcp already connected.");
                 return;
             }
 
             IPEndPoint endPoint = GetEndPoint(address);
             if (endPoint == null)
             {
-                Log.Error("invalid tcp connection address: {0}", address);
+                Log.Error($"invalid tcp connection address: {address}");
                 return;
             }
 
@@ -267,7 +267,7 @@ namespace U3DMobile
             {
                 if (!isConnecting)
                 {
-                    Log.Error("there is no tcp connection");
+                    Log.Error($"there is no tcp connection");
                     return;
                 }
 
@@ -383,12 +383,12 @@ namespace U3DMobile
         {
             if (!isConnecting)
             {
-                Log.Error("can not send data, there is no tcp connection");
+                Log.Error($"can not send data, there is no tcp connection");
                 return;
             }
             if (data == null || data.Length == 0)
             {
-                Log.Error("try to send empty tcp data");
+                Log.Error($"try to send empty tcp data");
                 return;
             }
 
@@ -411,7 +411,7 @@ namespace U3DMobile
              || eventArgs.SocketError      != SocketError.Success
              || eventArgs.BytesTransferred <= 0)
             {
-                Log.Error("an abnormal sending occurred here");
+                Log.Error($"an abnormal sending occurred here");
             }
         }
 

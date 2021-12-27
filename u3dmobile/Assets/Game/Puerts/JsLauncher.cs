@@ -41,7 +41,7 @@ namespace U3DMobile
 
             if (string.IsNullOrWhiteSpace(code))
             {
-                Log.Error("failed to load the javascript bundle.");
+                Log.Error($"failed to load the javascript bundle.");
                 return;
             }
 
