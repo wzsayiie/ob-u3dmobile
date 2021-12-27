@@ -91,7 +91,7 @@ export class UICom {
     private _rootNode   : UIGObjectNode
     private _boundTarget: object
 
-    constructor(aGCom?: FairyGUI.GComponent, name?: string) {
+    public constructor(aGCom?: FairyGUI.GComponent, name?: string) {
         this.SetGCom(aGCom, name)
     }
 
