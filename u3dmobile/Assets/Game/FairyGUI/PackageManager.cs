@@ -80,7 +80,7 @@ namespace U3DMobile
             }
         }
 
-        public GObject CreateElement(PackageSource source, string pkgName, string resName)
+        public GObject CreateGObject(PackageSource source, string pkgName, string resName)
         {
             if (string.IsNullOrWhiteSpace(pkgName))
             {
@@ -95,15 +95,15 @@ namespace U3DMobile
 
             AddPackage(source, pkgName);
 
-            GObject element = UIPackage.CreateObject(pkgName, resName);
-            if (element == null)
+            GObject aGObject = UIPackage.CreateObject(pkgName, resName);
+            if (aGObject == null)
             {
                 Log.Error("failed to create '{0}/{1}'", pkgName, resName);
             }
-            return element;
+            return aGObject;
         }
 
-        public string GetElementUrl(PackageSource source, string pkgName, string resName)
+        public string GetItemUrl(PackageSource source, string pkgName, string resName)
         {
             if (string.IsNullOrWhiteSpace(pkgName))
             {

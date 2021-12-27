@@ -8,15 +8,17 @@ namespace U3DMobile
 {
     class LoadingDirector : UIComDirector
     {
-        [UIOutlet("button")]
+        [UIBind("button")]
         private GButton _button;
-
-        [UIOutlet("button.title")]
-        private GTextField _title;
 
         protected override void OnCreate()
         {
             base.OnCreate();
+        }
+
+        [UIBind("button.onClick")]
+        protected void OnButtonClick()
+        {
         }
     }
 }

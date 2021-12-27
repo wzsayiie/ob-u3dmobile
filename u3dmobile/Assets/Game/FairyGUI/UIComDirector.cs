@@ -8,11 +8,11 @@ namespace U3DMobile
 {
     class UIComDirector
     {
-        private bool          _filled ;
-        private GObject       _element;
-        private PackageSource _source ;
+        private bool          _filled;
+        private GComponent    _theGCom;
+        private PackageSource _pkgSource;
         private string        _pkgName;
-        private string        _resName;
+        private string        _comName;
 
         private Window _window ;
         private UICom  _com    ;
@@ -23,39 +23,44 @@ namespace U3DMobile
         public UICom  com    { get { return _com   ; } }
         public bool   shown  { get { return _shown ; } }
 
-        public void SetElement(GObject element)
+        public void SetGCom(GComponent aGCom)
         {
-            if (element == null)
-            {
-                return;
-            }
-
-            //NOTE: cause the director needs to control the life cycle of the ui,
-            //it can only be filled once.
             if (_filled)
             {
+                Log.Error($"can not set ui com repeatedly");
                 return;
             }
 
-            _filled  = true   ;
-            _element = element;
+            if (aGCom != null)
+            {
+                _filled  = true ;
+                _theGCom = aGCom;
+            }
         }
 
-        public void SetResource(PackageSource source, string pkgName, string resName)
+        public void SetResource(PackageSource source, string pkgName, string comName)
         {
-            if (string.IsNullOrWhiteSpace(pkgName) || string.IsNullOrWhiteSpace(resName))
-            {
-                return;
-            }
             if (_filled)
             {
+                Log.Error($"can not set package resource repeatedly");
                 return;
             }
 
-            _filled  = true   ;
-            _source  = source ;
-            _pkgName = pkgName;
-            _resName = resName;
+            if (string.IsNullOrWhiteSpace(pkgName))
+            {
+                Log.Error($"try to set empty package name");
+                return;
+            }
+            if (string.IsNullOrWhiteSpace(comName))
+            {
+                Log.Error($"try to set empty component name");
+                return;
+            }
+
+            _filled    = true   ;
+            _pkgSource = source ;
+            _pkgName   = pkgName;
+            _comName   = comName;
         }
 
         public void Show()
@@ -68,19 +73,27 @@ namespace U3DMobile
             if (!_created)
             {
                 //actions:
-                if (_element == null)
+                if (_theGCom == null)
                 {
-                    _element = PackageManager.instance.CreateElement(_source, _pkgName, _resName);
+                    PackageManager manager = PackageManager.instance;
+                    GObject aGObject = manager.CreateGObject(_pkgSource, _pkgName, _comName);
+
+                    _theGCom = aGObject.asCom;
+                    if (_theGCom == null)
+                    {
+                        Log.Error($"failed to create '{_pkgName}/{_comName}'");
+                        return;
+                    }
                 }
 
                 _window = new Window
                 {
-                    contentPane = _element.asCom,
+                    contentPane = _theGCom,
                 };
 
                 _com = new UICom();
-                _com.SetRootElement(_element, _resName);
-                _com.BindOutlets(this);
+                _com.SetGCom(_theGCom, _comName);
+                _com.Bind(this);
 
                 //notification.
                 _created = true;
@@ -121,13 +134,12 @@ namespace U3DMobile
             if (_created)
             {
                 //actions:
-                _com.UnbindOutlets(this);
                 _com = null;
 
                 _window.Dispose();
                 _window = null;
 
-                _element = null;
+                _theGCom = null;
 
                 //notification.
                 _created = false;

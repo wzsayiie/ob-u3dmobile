@@ -9,31 +9,42 @@ using System.Reflection;
 
 namespace U3DMobile
 {
-    class UIOutletAttribute : Attribute
+    class UIBindAttribute : Attribute
     {
         public string path;
 
-        public UIOutletAttribute(string path)
+        public UIBindAttribute(string path)
         {
             this.path = path;
         }
     }
 
-    class UIOutletFieldItem
+    enum UIBindType
+    {
+        MemberField,    //set a ui com from resource to the member field.
+        ButtonClick,    //set the method to aGButton.onClick.
+        ItemProvider,   //set the method as aGList.itemProvider.
+        ItemRenderer,   //set the method as aGList.itemRenderer.
+    }
+
+    class UIBindEntry
     {
         public const char PathSeperator = '.';
 
-        public FieldInfo fieldInfo;
-        public string[]  pathSteps;
+        public string     searchPath;
+        public string[]   pathSteps ;
+        public UIBindType bindType  ;
+        public FieldInfo  fieldInfo ;
+        public MethodInfo methodInfo;
     }
 
-    class UIOutletFieldMap : Singleton<UIOutletFieldMap>
+    class UIBindMap : Singleton<UIBindMap>
     {
-        public static UIOutletFieldMap instance { get { return GetInstance(); } }
+        public static UIBindMap instance { get { return GetInstance(); } }
 
-        private Dictionary<Type, UIOutletFieldItem[]> _fieldMap;
+        private Dictionary<Type, UIBindEntry[]> _caches;
 
-        public UIOutletFieldItem[] GetFields(Type type)
+        public UIBindEntry[] GetEntries(Type type)
         {
             //null type.
             if (type == null)
@@ -41,183 +52,211 @@ namespace U3DMobile
                 return null;
             }
 
-            //get items from caches.
-            if (_fieldMap == null)
+            //get entries from caches.
+            if (_caches == null)
             {
-                _fieldMap = new Dictionary<Type, UIOutletFieldItem[]>();
+                _caches = new Dictionary<Type, UIBindEntry[]>();
             }
-            if (_fieldMap.ContainsKey(type))
+            if (_caches.ContainsKey(type))
             {
-                return _fieldMap[type];
+                return _caches[type];
             }
 
-            //add new items.
-            UIOutletFieldItem[] items = CollectFields(type);
-            _fieldMap.Add(type, items);
-            return items;
+            //add new entry.
+            UIBindEntry[] entries = CollectEntries(type);
+            _caches.Add(type, entries);
+            return entries;
         }
 
-        private UIOutletFieldItem[] CollectFields(Type type)
+        private UIBindEntry[] CollectEntries(Type type)
         {
-            var list = new List<UIOutletFieldItem>();
-
             BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+            var list = new List<UIBindEntry>();
+
             FieldInfo[] fields = type.GetFields(flags);
             foreach (FieldInfo field in fields)
             {
-                //in general, the length of the "attributes" should be 0 or 1.
-                object[] attributes = field.GetCustomAttributes(typeof(UIOutletAttribute), false);
-                if (attributes.Length != 1)
-                {
-                    continue;
-                }
+                TryAddFieldEntry(list, type, field);
+            }
 
-                string path = (attributes[0] as UIOutletAttribute).path;
-                if (string.IsNullOrWhiteSpace(path))
-                {
-                    Log.Error("outlet '{0}.{1}' with a empty path", type.Name, field.Name);
-                    continue;
-                }
-
-                string[] steps = path.Split(UIOutletFieldItem.PathSeperator);
-                list.Add(new UIOutletFieldItem
-                {
-                    fieldInfo = field,
-                    pathSteps = steps,
-                });
+            MethodInfo[] methods = type.GetMethods(flags);
+            foreach (MethodInfo method in methods)
+            {
+                TryAddMethodEntry(list, type, method);
             }
 
             return list.ToArray();
         }
+
+        private void TryAddFieldEntry(List<UIBindEntry> list, Type classType, FieldInfo field)
+        {
+            //in general, the length of the "attributes" should be 0 or 1.
+            object[] attributes = field.GetCustomAttributes(typeof(UIBindAttribute), false);
+            if (attributes.Length != 1)
+            {
+                return;
+            }
+
+            string path = (attributes[0] as UIBindAttribute).path;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Log.Error($"field '{classType.Name}.{field.Name}' with a empty path");
+                return;
+            }
+
+            list.Add(new UIBindEntry
+            {
+                searchPath = path,
+                pathSteps  = path.Split(UIBindEntry.PathSeperator),
+                bindType   = UIBindType.MemberField,
+                fieldInfo  = field,
+                methodInfo = null,
+            });
+        }
+
+        private void TryAddMethodEntry(List<UIBindEntry> list, Type classType, MethodInfo method)
+        {
+            object[] attributes = method.GetCustomAttributes(typeof(UIBindAttribute), false);
+            if (attributes.Length != 1)
+            {
+                return;
+            }
+
+            string path = (attributes[0] as UIBindAttribute).path;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                Log.Error($"method '{classType.Name}.{method.Name}' with a empty path");
+                return;
+            }
+
+            string[] steps = path.Split(UIBindEntry.PathSeperator);
+            if (steps.Length <= 1)
+            {
+                Log.Error($"method '{classType.Name}.{method.Name}' with a illogical path");
+                return;
+            }
+            
+            string lastStep = steps[steps.Length - 1];
+            
+            UIBindType bindType;
+            if (lastStep == "onClick")
+            {
+                bindType = UIBindType.ButtonClick;
+                if (!IsMethodMeet(method, typeof(void)))
+                {
+                    Log.Error($"method '{classType.Name}.{method.Name}' can not respond button click");
+                    return;
+                }
+            }
+            else if (lastStep == "itemProvider")
+            {
+                bindType = UIBindType.ItemProvider;
+                if (!IsMethodMeet(method, typeof(string), typeof(int)))
+                {
+                    Log.Error($"method '{classType.Name}.{method.Name}' can not as a list provider");
+                    return;
+                }
+            }
+            else if (lastStep == "itemRenderer")
+            {
+                bindType = UIBindType.ItemRenderer;
+                if (!IsMethodMeet(method, typeof(void), typeof(int), typeof(GObject)))
+                {
+                    Log.Error($"method '{classType.Name}.{method.Name}' can not as a list renderer");
+                    return;
+                }
+            }
+            else
+            {
+                Log.Error($"method '{classType.Name}.{method.Name}' with unsupported path");
+                return;
+            }
+            
+            list.Add(new UIBindEntry
+            {
+                searchPath = path,
+                pathSteps  = steps,
+                bindType   = bindType,
+                fieldInfo  = null,
+                methodInfo = method,
+            });
+        }
+
+        private bool IsMethodMeet(MethodInfo method, Type ret, params Type[] args)
+        {
+            if (method.ReturnType != ret)
+            {
+                return false;
+            }
+
+            ParameterInfo[] funcArgs = method.GetParameters();
+            if (funcArgs.Length != args.Length)
+            {
+                return false;
+            }
+
+            for (int n = 0; n < funcArgs.Length; ++n)
+            {
+                if (funcArgs[n].ParameterType != args[n])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
     }
 
-    class UIElementNode
+    class UIGObjectNode
     {
         //NOTE: the top level ui objects of fairy-gui have no names.
-        public string  elementName;
-        public GObject element;
+        public string  theGObjectName;
+        public GObject theGObject;
 
         public bool scanned;
 
-        public Dictionary<string, UIElementNode> childNodes ;
+        public Dictionary<string, UIGObjectNode> childNodes ;
         public Dictionary<string, Controller   > controllers;
         public Dictionary<string, Transition   > transitions;
     }
 
     class UICom
     {
-        private UIElementNode _rootNode;
+        private UIGObjectNode _rootNode;
+        private object _boundTarget;
 
-        public void SetRootElement(GObject element, string name = null)
+        public UICom(GComponent aGCom = null, string name = null)
         {
+            SetGCom(aGCom, name);
+        }
+
+        public void SetGCom(GComponent aGCom, string name = null)
+        {
+            //NOTE: assignment operation is one-time.
             if (_rootNode != null)
             {
-                UnbindOutlets(this);
-                _rootNode = null;
+                Log.Error($"can not set ui com repeatedly");
+                return;
             }
 
-            //NOTE: it must be re-bound,
-            //regardless of whether the element is the same as the current element.
-            //because the ui tree may change.
-            if (element != null)
+            if (aGCom != null)
             {
-                _rootNode = new UIElementNode
+                _rootNode = new UIGObjectNode
                 {
-                    elementName = name ?? element.name,
-                    element = element,
+                    theGObjectName = name,
+                    theGObject = aGCom,
                 };
-                BindOutlets(this);
             }
         }
 
-        public GObject rootElement
+        public GComponent theGCom
         {
-            get { return _rootNode?.element; }
+            get { return _rootNode?.theGObject.asCom; }
         }
 
-        public void BindOutlets(object target)
+        private UIGObjectNode AdvanceToNode(string[] steps, int end)
         {
-            if (target == null)
-            {
-                return;
-            }
-            if (_rootNode == null)
-            {
-                return;
-            }
-
-            UIOutletFieldItem[] fieldItems = UIOutletFieldMap.instance.GetFields(target.GetType());
-            foreach (UIOutletFieldItem item in fieldItems)
-            {
-                object value = FindValue(item.pathSteps);
-                if (value == null)
-                {
-                    Log.Error("from '{0}', not found any suitable object for '{1}.{2}'",
-                        _rootNode.elementName,
-                        target.GetType().Name,
-                        item.fieldInfo.Name
-                    );
-                    continue;
-                }
-
-                if (!item.fieldInfo.FieldType.IsAssignableFrom(value.GetType()))
-                {
-                    Log.Error(
-                        "the field '{0}.{1}: {2}' is incompatible with the type '{3}'",
-                        target.GetType().Name,
-                        item.fieldInfo.Name,
-                        item.fieldInfo.FieldType.Name,
-                        value.GetType().Name
-                    );
-                    continue;
-                }
-
-                item.fieldInfo.SetValue(target, value);
-            }
-        }
-
-        public void UnbindOutlets(object target)
-        {
-            if (target == null)
-            {
-                return;
-            }
-
-            UIOutletFieldItem[] fieldItems = UIOutletFieldMap.instance.GetFields(target.GetType());
-            foreach (UIOutletFieldItem item in fieldItems)
-            {
-                item.fieldInfo.SetValue(target, null);
-            }
-        }
-
-        private object FindValue(string[] steps)
-        {
-            UIElementNode node = ExpandNode(steps, steps.Length - 1);
-            if (node == null)
-            {
-                return null;
-            }
-
-            string lastStep = steps[steps.Length - 1];
-            if (node.childNodes != null && node.childNodes.ContainsKey(lastStep))
-            {
-                return node.childNodes[lastStep].element;
-            }
-            if (node.controllers != null && node.controllers.ContainsKey(lastStep))
-            {
-                return node.controllers[lastStep];
-            }
-            if (node.transitions != null && node.transitions.ContainsKey(lastStep))
-            {
-                return node.transitions[lastStep];
-            }
-
-            return null;
-        }
-
-        private UIElementNode ExpandNode(string[] steps, int end)
-        {
-            UIElementNode node = _rootNode;
+            UIGObjectNode node = _rootNode;
             ScanNode(node);
 
             for (int n = 0; n < end; ++n)
@@ -240,34 +279,35 @@ namespace U3DMobile
             return node;
         }
 
-        private void ScanNode(UIElementNode node)
+        private void ScanNode(UIGObjectNode node)
         {
             if (node.scanned)
             {
                 return;
             }
+            node.scanned = true;
 
-            GComponent com = node.element.asCom;
+            GComponent com = node.theGObject.asCom;
             if (com == null)
             {
                 return;
             }
 
-            if (com._children != null && com._children.Count > 0)
+            if (com._children?.Count > 0)
             {
-                node.childNodes = new Dictionary<string, UIElementNode>();
-                foreach (GObject element in com._children)
+                node.childNodes = new Dictionary<string, UIGObjectNode>();
+                foreach (GObject child in com._children)
                 {
-                    var child = new UIElementNode
+                    var childNode = new UIGObjectNode
                     {
-                        elementName = element.name,
-                        element = element,
+                        theGObjectName = child.name,
+                        theGObject = child,
                     };
-                    node.childNodes.Add(child.element.name, child);
+                    node.childNodes.Add(child.name, childNode);
                 }
             }
 
-            if (com._controllers != null && com._controllers.Count > 0)
+            if (com._controllers?.Count > 0)
             {
                 node.controllers = new Dictionary<string, Controller>();
                 foreach (Controller controller in com._controllers)
@@ -276,7 +316,7 @@ namespace U3DMobile
                 }
             }
 
-            if (com._transitions != null && com._transitions.Count > 0)
+            if (com._transitions?.Count > 0)
             {
                 node.transitions = new Dictionary<string, Transition>();
                 foreach (Transition transition in com._transitions)
@@ -284,81 +324,181 @@ namespace U3DMobile
                     node.transitions.Add(transition.name, transition);
                 }
             }
-
-            node.scanned = true;
         }
 
-        public GObject FindElement(string path)
+        public GObject    FindGObject   (string path) { return Find(path, 'O') as GObject   ; }
+        public Controller FindController(string path) { return Find(path, 'C') as Controller; }
+        public Transition FindTransition(string path) { return Find(path, 'T') as Transition; }
+
+        private object Find(string path, char targetType)
         {
-            UIElementNode node = FindParentNode(path, out string lastStep);
-            if (node == null)
+            if (string.IsNullOrEmpty(path))
             {
+                Log.Error($"try to find ui item with empty path");
                 return null;
             }
 
-            if (node.childNodes != null && node.childNodes.ContainsKey(lastStep))
-            {
-                return node.childNodes[lastStep].element;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public Controller FindController(string path)
-        {
-            UIElementNode node = FindParentNode(path, out string lastStep);
-            if (node == null)
-            {
-                return null;
-            }
-
-            if (node.controllers != null && node.controllers.ContainsKey(lastStep))
-            {
-                return node.controllers[lastStep];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public Transition FindTransition(string path)
-        {
-            UIElementNode node = FindParentNode(path, out string lastStep);
-            if (node == null)
-            {
-                return null;
-            }
-
-            if (node.transitions != null && node.transitions.ContainsKey(lastStep))
-            {
-                return node.transitions[lastStep];
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        private UIElementNode FindParentNode(string path, out string lastStep)
-        {
-            lastStep = null;
-
-            if (string.IsNullOrWhiteSpace(path))
-            {
-                return null;
-            }
             if (_rootNode == null)
             {
                 return null;
             }
 
-            string[] steps = path.Split(UIOutletFieldItem.PathSeperator);
-            lastStep = steps[steps.Length - 1];
+            string   rootName = _rootNode.theGObjectName;
+            string[] steps    = path.Split(UIBindEntry.PathSeperator);
+            string   lastStep = steps[steps.Length - 1];
 
-            return ExpandNode(steps, steps.Length - 1);
+            UIGObjectNode node = AdvanceToNode(steps, steps.Length - 1);
+            if (node == null)
+            {
+                Log.Error($"not found '{path}' in '{rootName}'");
+                return null;
+            }
+
+            if (targetType == 'O')
+            {
+                if (!node.childNodes.ContainsKey(lastStep))
+                {
+                    Log.Error($"not found ui object '{path}' in '{rootName}'");
+                    return null;
+                }
+
+                return node.childNodes[lastStep].theGObject;
+            }
+            else if (targetType == 'C')
+            {
+                if (!node.controllers.ContainsKey(lastStep))
+                {
+                    Log.Error($"not found controller '{path}' in '{rootName}'");
+                    return null;
+                }
+
+                return node.controllers[lastStep];
+            }
+            else //if (targetType == 'T')
+            {
+                if (!node.transitions.ContainsKey(lastStep))
+                {
+                    Log.Error($"not found transition '{path}' in '{rootName}'");
+                    return null;
+                }
+
+                return node.transitions[lastStep];
+            }
+        }
+
+        public void Bind(object target)
+        {
+            //NOTE: bind operation is one-time.
+            if (_boundTarget != null)
+            {
+                Log.Error($"can not bind ui com repeatedly");
+                return;
+            }
+
+            if (target == null)
+            {
+                Log.Error($"try to bind ui com to a empty target");
+                return;
+            }
+            if (_rootNode == null)
+            {
+                return;
+            }
+
+            Type targetName = target.GetType();
+
+            UIBindEntry[] entries = UIBindMap.instance.GetEntries(targetName);
+            foreach (UIBindEntry entry in entries)
+            {
+                string[] steps = entry.pathSteps;
+
+                UIGObjectNode node = AdvanceToNode(steps, steps.Length - 1);
+                if (node == null)
+                {
+                    Log.Error($"not found '{entry.searchPath}' in '{_rootNode.theGObjectName}'");
+                    continue;
+                }
+
+                switch (entry.bindType)
+                {
+                case UIBindType.MemberField : BindMemberField (entry, node, target); break;
+                case UIBindType.ButtonClick : BindButtonClick (entry, node, target); break;
+                case UIBindType.ItemProvider: BindItemProvider(entry, node, target); break;
+                case UIBindType.ItemRenderer: BindItemRenderer(entry, node, target); break;
+                }
+            }
+        }
+
+        private void BindMemberField(UIBindEntry entry, UIGObjectNode parent, object target)
+        {
+            string lastStep = entry.pathSteps[entry.pathSteps.Length - 1];
+            if ((bool) !parent.childNodes?.ContainsKey(lastStep))
+            {
+                Log.Error($"not found '{entry.searchPath}' in '{_rootNode.theGObjectName}'");
+                return;
+            }
+
+            UIGObjectNode lastNode    = parent.childNodes[lastStep];
+            GObject       valueObject = lastNode.theGObject;
+            Type          valueType   = valueObject.GetType();
+
+            if (!entry.fieldInfo.FieldType.IsAssignableFrom(valueType))
+            {
+                string clazz = target.GetType().Name;
+                string field = entry.fieldInfo.Name;
+
+                Log.Error($"can not assign '{clazz}.{field}' with a '{valueType.Name}'");
+                return;
+            }
+
+            entry.fieldInfo.SetValue(target, valueObject);
+        }
+
+        private void BindButtonClick(UIBindEntry entry, UIGObjectNode node, object target)
+        {
+            GButton button = node.theGObject.asButton;
+            if (button == null)
+            {
+                Log.Error($"'{entry.searchPath}' from '{node.theGObjectName}' is not a button");
+                return;
+            }
+
+            button.onClick.Set(() =>
+            {
+                entry.methodInfo.Invoke(target, null);
+            });
+        }
+
+        private void BindItemProvider(UIBindEntry entry, UIGObjectNode node, object target)
+        {
+            GList list = node.theGObject.asList;
+            if (list == null)
+            {
+                Log.Error($"'{entry.searchPath}' from '{node.theGObjectName}' is not a list");
+                return;
+            }
+
+            list.itemProvider = (int index) =>
+            {
+                object[] args = new object[] { index };
+                return entry.methodInfo.Invoke(target, args) as string;
+            };
+        }
+
+        private void BindItemRenderer(UIBindEntry entry, UIGObjectNode node, object target)
+        {
+            GList list = node.theGObject.asList;
+            if (list == null)
+            {
+                Log.Error($"'{entry.searchPath}' from '{node.theGObjectName}' is not a list");
+                return;
+            }
+
+            list.itemRenderer = (int index, GObject item) =>
+            {
+                object[] args = new object[] { index, item };
+                entry.methodInfo.Invoke(target, args);
+            };
         }
     }
 }
