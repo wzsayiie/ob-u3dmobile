@@ -11,7 +11,7 @@ namespace U3DMobile
     {
         public static ArrayBuffer UTF8Buffer(string value)
         {
-            if (!string.IsNullOrEmpty(value))
+            if (!string.IsNullOrWhiteSpace(value))
             {
                 byte[] bytes = Encoding.UTF8.GetBytes(value);
                 return new ArrayBuffer(bytes);

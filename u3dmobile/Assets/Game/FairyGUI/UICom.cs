@@ -332,7 +332,7 @@ namespace U3DMobile
 
         private object Find(string path, char targetType)
         {
-            if (string.IsNullOrEmpty(path))
+            if (string.IsNullOrWhiteSpace(path))
             {
                 Log.Error($"try to find ui item with a empty path");
                 return null;
