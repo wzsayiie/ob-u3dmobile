@@ -48,12 +48,12 @@ namespace U3DMobile
 
             if (string.IsNullOrWhiteSpace(pkgName))
             {
-                Log.Error($"try to set empty package name");
+                Log.Error($"try to set a empty package name");
                 return;
             }
             if (string.IsNullOrWhiteSpace(comName))
             {
-                Log.Error($"try to set empty component name");
+                Log.Error($"try to set a empty component name");
                 return;
             }
 

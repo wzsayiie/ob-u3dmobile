@@ -21,8 +21,8 @@ namespace U3DMobile
 
     enum UIBindType
     {
-        MemberField,    //set a ui com from resource to the member field.
-        ButtonClick,    //set the method to aGButton.onClick.
+        MemberField ,   //set a ui com from resource to the member field.
+        ButtonClick ,   //set the method to aGButton.onClick.
         ItemProvider,   //set the method as aGList.itemProvider.
         ItemRenderer,   //set the method as aGList.itemRenderer.
     }
@@ -243,7 +243,7 @@ namespace U3DMobile
             {
                 _rootNode = new UIGObjectNode
                 {
-                    theGObjectName = name,
+                    theGObjectName = name ?? aGCom.name,
                     theGObject = aGCom,
                 };
             }
@@ -334,7 +334,7 @@ namespace U3DMobile
         {
             if (string.IsNullOrEmpty(path))
             {
-                Log.Error($"try to find ui item with empty path");
+                Log.Error($"try to find ui item with a empty path");
                 return null;
             }
 
@@ -356,7 +356,7 @@ namespace U3DMobile
 
             if (targetType == 'O')
             {
-                if (!node.childNodes.ContainsKey(lastStep))
+                if ((bool) !node.childNodes?.ContainsKey(lastStep))
                 {
                     Log.Error($"not found ui object '{path}' in '{rootName}'");
                     return null;
@@ -366,7 +366,7 @@ namespace U3DMobile
             }
             else if (targetType == 'C')
             {
-                if (!node.controllers.ContainsKey(lastStep))
+                if ((bool) !node.controllers?.ContainsKey(lastStep))
                 {
                     Log.Error($"not found controller '{path}' in '{rootName}'");
                     return null;
@@ -376,7 +376,7 @@ namespace U3DMobile
             }
             else //if (targetType == 'T')
             {
-                if (!node.transitions.ContainsKey(lastStep))
+                if ((bool) !node.transitions?.ContainsKey(lastStep))
                 {
                     Log.Error($"not found transition '{path}' in '{rootName}'");
                     return null;
@@ -397,7 +397,7 @@ namespace U3DMobile
 
             if (target == null)
             {
-                Log.Error($"try to bind ui com to a empty target");
+                Log.Error($"try to bind ui com to a null target");
                 return;
             }
             if (_rootNode == null)
