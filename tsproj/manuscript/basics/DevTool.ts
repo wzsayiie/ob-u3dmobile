@@ -1,16 +1,21 @@
 import { Singleton } from './Singleton'
+import { U3DMobile } from 'csharp'
 
 export class DevTool extends Singleton<DevTool>() {
 
     public Install(): void {
-        let csharp = require('csharp')
         let puerts = require('puerts')
 
         //"source-map-support" need these functions to read sources.
         puerts.registerBuildinModule('path', {
 
             dirname: function (path: string): string {
-                return csharp.System.IO.Path.GetDirectoryName(path)
+                let end = path.lastIndexOf('\\')
+                if (end == -1) {
+                    end = path.lastIndexOf('/')
+                }
+
+                return path.substring(0, end)
             },
 
             resolve: function (dir: string, url: string): string {
@@ -25,16 +30,18 @@ export class DevTool extends Singleton<DevTool>() {
         puerts.registerBuildinModule('fs', {
 
             existsSync: function (path: string): boolean {
-                return csharp.System.IO.File.Exists(path)
+                //sources always exist.
+                return true
             },
 
             readFileSync: function (path: string): string {
-                return csharp.System.IO.File.ReadAllText(path)
+                return U3DMobile.AssetManager.instance.LoadString(path)
             },
         })
 
         //on "inline-source-map" option, need "buffer" module.
-        globalThis['Buffer'] = require('buffer').Buffer
+        let global = <any> globalThis
+        global['Buffer'] = require('buffer').Buffer
 
         require('source-map-support').install()
     }
