@@ -11,18 +11,18 @@ namespace U3DMobile.Editor
         {
             FileAssist.ResetDirectory("Assets/Puerts");
 
-            var sources = new DependenceConfig
+            var sources = new DependConfig
             {
                 logsWord = "puerts-sources",
 
                 thirdUrl = "https://github.com/Tencent/puerts/archive/refs/tags/Unity_Plugin_1.1.2.zip",
-                localZip = "DEPENDENCE/puerts-sources.zip",
-                raiseDir = "DEPENDENCE/puerts-sources",
+                localZip = "DEPENDS/puerts-sources.zip",
+                unzipDir = "DEPENDS/puerts-sources",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Src",
-                    "DEPENDENCE/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Typing",
+                    "DEPENDS/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Src",
+                    "DEPENDS/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Typing",
                 },
                 dstFiles = new List<string>
                 {
@@ -30,26 +30,26 @@ namespace U3DMobile.Editor
                     "Assets/Puerts/Typing",
                 },
             };
-            InstallDependence(sources);
+            InstallDepend(sources);
 
-            var plugins = new DependenceConfig
+            var plugins = new DependConfig
             {
                 logsWord = "puerts-plugins",
 
                 thirdUrl = "https://github.com/Tencent/puerts/releases/download/Unity_Plugin_1.1.2/Plugins_V8_ver14.tgz",
-                localZip = "DEPENDENCE/puerts-plugins.tgz",
-                raiseDir = "DEPENDENCE/puerts-plugins",
+                localZip = "DEPENDS/puerts-plugins.tgz",
+                unzipDir = "DEPENDS/puerts-plugins",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDENCE/puerts-plugins/Plugins",
+                    "DEPENDS/puerts-plugins/Plugins",
                 },
                 dstFiles = new List<string>
                 {
                     "Assets/Puerts/Plugins",
                 },
             };
-            InstallDependence(plugins);
+            InstallDepend(plugins);
         }
 
         [MenuItem("U3DMOBILE/Install FairyGUI Runtime")]
@@ -57,18 +57,18 @@ namespace U3DMobile.Editor
         {
             FileAssist.ResetDirectory("Assets/FairyGUI");
 
-            var sources = new DependenceConfig
+            var sources = new DependConfig
             {
                 logsWord = "fairygui-runtime",
 
                 thirdUrl = "https://github.com/fairygui/FairyGUI-unity/archive/refs/tags/4.2.0.zip",
-                localZip = "DEPENDENCE/fairygui.zip",
-                raiseDir = "DEPENDENCE/fairygui",
+                localZip = "DEPENDS/fairygui.zip",
+                unzipDir = "DEPENDS/fairygui",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDENCE/fairygui/FairyGUI-unity-4.2.0/Assets/Resources",
-                    "DEPENDENCE/fairygui/FairyGUI-unity-4.2.0/Assets/Scripts",
+                    "DEPENDS/fairygui/FairyGUI-unity-4.2.0/Assets/Resources",
+                    "DEPENDS/fairygui/FairyGUI-unity-4.2.0/Assets/Scripts",
                 },
                 dstFiles = new List<string>
                 {
@@ -76,36 +76,37 @@ namespace U3DMobile.Editor
                     "Assets/FairyGUI/Scripts",
                 },
             };
-            InstallDependence(sources);
+            InstallDepend(sources);
         }
 
-        private class DependenceConfig
+        private class DependConfig
         {
             public string logsWord;
 
             public string thirdUrl;
             public string localZip;
-            public string raiseDir;
+            public string unzipDir;
 
             public List<string> srcFiles;
             public List<string> dstFiles;
         }
 
-        private static void InstallDependence(DependenceConfig config)
+        private static void InstallDepend(DependConfig config)
         {
-            Debug.LogFormat("[0/3] {0} started", config.logsWord);
+            /**/Debug.Log($"[0/3] {config.logsWord} started");
+
             NetAssist.HttpGet(config.thirdUrl, config.localZip, () =>
             {
-                Debug.LogFormat("[1/3] {0} downloaded", config.logsWord);
+                Debug.Log($"[1/3] {config.logsWord} downloaded");
 
-                FileAssist.ExtractFile(config.localZip, config.raiseDir);
-                Debug.LogFormat("[2/3] {0} extracted", config.logsWord);
+                FileAssist.ExtractFile(config.localZip, config.unzipDir);
+                Debug.Log($"[2/3] {config.logsWord} extracted");
 
                 for (int i = 0; i < config.srcFiles.Count; ++i)
                 {
                     FileAssist.MovePath(config.srcFiles[i], config.dstFiles[i]);
                 }
-                Debug.LogFormat("[3/3] {0} installed", config.logsWord);
+                Debug.Log($"[3/3] {config.logsWord} installed");
             });
         }
     }
