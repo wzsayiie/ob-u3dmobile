@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace U3DMobile.Editor
 {
-    static class Dependence
+    static class Depends
     {
         [MenuItem("U3DMOBILE/Install Puerts")]
         public static void InstallPuerts()
@@ -94,7 +94,7 @@ namespace U3DMobile.Editor
         private static void InstallDependence(DependenceConfig config)
         {
             Debug.LogFormat("[0/3] {0} started", config.logsWord);
-            DownloadAssist.Get(config.thirdUrl, config.localZip, () =>
+            NetAssist.HttpGet(config.thirdUrl, config.localZip, () =>
             {
                 Debug.LogFormat("[1/3] {0} downloaded", config.logsWord);
 
