@@ -4,25 +4,25 @@ using UnityEngine;
 
 namespace U3DMobile.Editor
 {
-    static class Depends
+    static class Dependences
     {
         [MenuItem("U3DMOBILE/Install Puerts")]
         public static void InstallPuerts()
         {
             FileAssist.ResetDirectory("Assets/Puerts");
 
-            var sources = new DependConfig
+            var sources = new DependenceConfig
             {
                 logsWord = "puerts-sources",
 
                 thirdUrl = "https://github.com/Tencent/puerts/archive/refs/tags/Unity_Plugin_1.1.2.zip",
-                localZip = "DEPENDS/puerts-sources.zip",
-                unzipDir = "DEPENDS/puerts-sources",
+                localZip = "DEPENDENCES/puerts-sources.zip",
+                unzipDir = "DEPENDENCES/puerts-sources",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDS/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Src",
-                    "DEPENDS/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Typing",
+                    "DEPENDENCES/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Src",
+                    "DEPENDENCES/puerts-sources/puerts-Unity_Plugin_1.1.2/unity/Assets/Puerts/Typing",
                 },
                 dstFiles = new List<string>
                 {
@@ -30,26 +30,26 @@ namespace U3DMobile.Editor
                     "Assets/Puerts/Typing",
                 },
             };
-            InstallDepend(sources);
+            InstallDependence(sources);
 
-            var plugins = new DependConfig
+            var plugins = new DependenceConfig
             {
                 logsWord = "puerts-plugins",
 
                 thirdUrl = "https://github.com/Tencent/puerts/releases/download/Unity_Plugin_1.1.2/Plugins_V8_ver14.tgz",
-                localZip = "DEPENDS/puerts-plugins.tgz",
-                unzipDir = "DEPENDS/puerts-plugins",
+                localZip = "DEPENDENCES/puerts-plugins.tgz",
+                unzipDir = "DEPENDENCES/puerts-plugins",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDS/puerts-plugins/Plugins",
+                    "DEPENDENCES/puerts-plugins/Plugins",
                 },
                 dstFiles = new List<string>
                 {
                     "Assets/Puerts/Plugins",
                 },
             };
-            InstallDepend(plugins);
+            InstallDependence(plugins);
         }
 
         [MenuItem("U3DMOBILE/Install FairyGUI Runtime")]
@@ -57,18 +57,18 @@ namespace U3DMobile.Editor
         {
             FileAssist.ResetDirectory("Assets/FairyGUI");
 
-            var sources = new DependConfig
+            var sources = new DependenceConfig
             {
                 logsWord = "fairygui-runtime",
 
                 thirdUrl = "https://github.com/fairygui/FairyGUI-unity/archive/refs/tags/4.2.0.zip",
-                localZip = "DEPENDS/fairygui.zip",
-                unzipDir = "DEPENDS/fairygui",
+                localZip = "DEPENDENCES/fairygui.zip",
+                unzipDir = "DEPENDENCES/fairygui",
 
                 srcFiles = new List<string>
                 {
-                    "DEPENDS/fairygui/FairyGUI-unity-4.2.0/Assets/Resources",
-                    "DEPENDS/fairygui/FairyGUI-unity-4.2.0/Assets/Scripts",
+                    "DEPENDENCES/fairygui/FairyGUI-unity-4.2.0/Assets/Resources",
+                    "DEPENDENCES/fairygui/FairyGUI-unity-4.2.0/Assets/Scripts",
                 },
                 dstFiles = new List<string>
                 {
@@ -76,10 +76,10 @@ namespace U3DMobile.Editor
                     "Assets/FairyGUI/Scripts",
                 },
             };
-            InstallDepend(sources);
+            InstallDependence(sources);
         }
 
-        private class DependConfig
+        private class DependenceConfig
         {
             public string logsWord;
 
@@ -91,7 +91,7 @@ namespace U3DMobile.Editor
             public List<string> dstFiles;
         }
 
-        private static void InstallDepend(DependConfig config)
+        private static void InstallDependence(DependenceConfig config)
         {
             /**/Debug.Log($"[0/3] {config.logsWord} started");
 
