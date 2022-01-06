@@ -13,24 +13,29 @@ namespace U3DMobile.Editor
         {
             if (s_routines == null)
             {
-                s_routines = new HashSet<IEnumerator>();
-
-                long count = 0;
-                EditorApplication.update += () =>
-                {
-                    //the frequency of EditorApplication.update is about 330 times per second.
-                    //here to reduce the call frequency.
-                    if (++count % 330 == 0)
-                    {
-                        Update();
-                    }
-                };
+                Initialize();
             }
 
             if (routine != null)
             {
                 s_routines.Add(routine);
             }
+        }
+
+        private static void Initialize()
+        {
+            s_routines = new HashSet<IEnumerator>();
+
+            long count = 0;
+            EditorApplication.update += () =>
+            {
+                //the frequency of EditorApplication.update is about 330 times per second.
+                //here to reduce the call frequency.
+                if (++count % 330 == 0)
+                {
+                    Update();
+                }
+            };
         }
 
         private static void Update()

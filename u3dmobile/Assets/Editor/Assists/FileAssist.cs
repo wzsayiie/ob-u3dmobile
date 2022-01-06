@@ -39,20 +39,20 @@ namespace U3DMobile.Editor
             }
         }
 
-        public static void MovePath(string src, string dst)
+        public static void MovePath(string srcPath, string dstPath)
         {
-            DeletePath(dst);
+            DeletePath(dstPath);
 
-            string dstParent = Path.GetDirectoryName(dst);
+            string dstParent = Path.GetDirectoryName(dstPath);
             CreateDirectoryIfNeed(dstParent);
 
-            if (Directory.Exists(src))
+            if (Directory.Exists(srcPath))
             {
-                Directory.Move(src, dst);
+                Directory.Move(srcPath, dstPath);
             }
-            else if (File.Exists(src))
+            else if (File.Exists(srcPath))
             {
-                File.Move(src, dst);
+                File.Move(srcPath, dstPath);
             }
         }
 
@@ -60,7 +60,8 @@ namespace U3DMobile.Editor
         {
             ResetDirectory(targetDirectory);
 
-            //use "tar" here. the tool from System.IO.Compression doesn't support formats such as "tgz".
+            //use the command "tar" here.
+            //the tool from System.IO.Compression doesn't support formats such as "tgz".
             //NOTE: for window, carries "tar" from windows 10.
             var info = new System.Diagnostics.ProcessStartInfo();
             {

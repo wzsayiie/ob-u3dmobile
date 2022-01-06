@@ -27,7 +27,7 @@ namespace U3DMobile.Editor
 
             if (session.result != UnityWebRequest.Result.Success)
             {
-                Debug.LogErrorFormat("get url error: {0}", session.result);
+                Debug.LogError($"get '${remoteUrl}' error: ${session.result}");
             }
             completion?.Invoke();
         }
