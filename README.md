@@ -1,3 +1,9 @@
+## OBSOLETED
+
+This respository has been obsoleted, it will not be improved or updated.
+
+on Aug 25, 2022.
+
 ## introduction
 
 this is a mobile game client development framework
